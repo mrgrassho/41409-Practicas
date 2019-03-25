@@ -1,2 +1,2 @@
-# 41409-Practicas
-Repositorio con los TPs de Programación Distribuida y Paralela.
+﻿# 41409-Practicas
+Repositorio con los TPs de Sistemas Distribuidos y Programacion Paralela. 
