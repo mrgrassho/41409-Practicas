@@ -1,4 +1,4 @@
-package Practico1.ServidorColas;
+package Punto3y4;
 
 import java.io.BufferedReader;
 import java.io.IOException;

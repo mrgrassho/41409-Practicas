@@ -1,4 +1,4 @@
-package Practico1.ServidorSimple;
+package punto2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,28 +8,32 @@ import java.net.Socket;
 
 public class ThreadServer implements Runnable{
 	Socket client;
+	int sleep;
 	
-	public ThreadServer (Socket client) {
+	public ThreadServer (Socket client, int sleep) {
 		this.client = client;
+		this.sleep = sleep;
 	}
 	public void run() {
 		// TODO Auto-generated method stub
 		
 		try {
-			BufferedReader inputChannel = new BufferedReader (new InputStreamReader (this.client.getInputStream()));
-			PrintWriter outputChannel = new PrintWriter (this.client.getOutputStream(),true);
+			BufferedReader inputChannel = new BufferedReader (new InputStreamReader (client.getInputStream()));
+			PrintWriter outputChannel = new PrintWriter (client.getOutputStream(),true);
 			
 			String msg = inputChannel.readLine();
-			System.out.println(" MSG from client: " + msg);
-			msg+=" from server";
+			System.out.println("Un cliente ha enviado> "+ msg);
+			msg= "'"+msg+"'"+" . [Echo from Server]";
 			outputChannel.println(msg);
+			System.out.println("Respuesta enviada.");
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(this.sleep);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			this.client.close();
+			client.close();
+			System.out.println("----Se ha cerrado una conexion----");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
