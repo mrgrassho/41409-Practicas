@@ -18,7 +18,7 @@ public class ClientRMI {
 		try {
 			
 			Registry clientRMI = LocateRegistry.getRegistry("localhost", 80);
-		    System.out.println("----- Cliente conectado al servidor por RMI -----");
+		    System.out.println("----- Cliente conectado -----");
 			
 			RemoteInt ri = (RemoteInt) clientRMI.lookup("info-clima");
 			String infoClima = ri.getClima();
