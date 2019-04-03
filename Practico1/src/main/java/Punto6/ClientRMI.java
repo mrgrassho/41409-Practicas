@@ -16,11 +16,14 @@ public class ClientRMI {
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		try {
+	try {
 			
-			Registry clientRMI = LocateRegistry.getRegistry("localhost", 80);
-		    System.out.println("----- Cliente conectado -----");
-			
+		Registry clientRMI = LocateRegistry.getRegistry("localhost", 80);
+		System.out.println("----- Cliente conectado -----");
+		
+		int nPrueba =1;
+		boolean salir1=false;
+		do  {  
 		    ArrayList<Integer> v1 = new ArrayList<Integer>();
 		    ArrayList<Integer> v2 = new ArrayList<Integer>();
 			
@@ -30,23 +33,58 @@ public class ClientRMI {
 				v1.add(n1); 
 				v2.add(n2);
 			}
-			System.out.println("ANTES DE ENVIARLOS POR PARAMETRO:");
+			System.out.println("VECTORES ANTES DE ENVIARLOS POR PARAMETRO:");
 			System.out.println("V1: " +v1.toString());
 			System.out.println("V2: " +v2.toString());
 			
 			RemoteInt ri = (RemoteInt) clientRMI.lookup("vectores");
 			
-			//ACA TENDRIA QUE DARLE A ELEGIR SI SUMAR O RESTAR 
-			ArrayList<Integer> vResult = ri.sumaVectores(v1, v2);
+			boolean salir2= false;
 			
-			System.out.println("AL VOLVER DEL SERVIDOR:");
-			System.out.println("V1: " +v1.toString());
-			System.out.println("V2: " +v2.toString());
+			do {
+				System.out.println("MENU");
+				System.out.println("1. Suma");
+				System.out.println("2. Resta");
+				System.out.println("0. Terminar");
+				System.out.println("Ingrese una opcion>");
+				Scanner scanner = new Scanner(System.in);
+				Integer op =  scanner.nextInt();
+				ArrayList<Integer> vResult;
 			
-			System.out.println("VECTOR SUMA: " +vResult.toString());
-			
-			System.out.println("----- Programa Finalizado -----");
-			
+				switch(op) {
+				case 1:
+					vResult = ri.sumaVectores(v1, v2);
+					System.out.println("VECTORES AL VOLVER DEL SERVIDOR:");
+					System.out.println("V1: " +v1.toString());
+					System.out.println("V2: " +v2.toString());
+					System.out.println("VECTOR SUMA: " +vResult.toString()); 
+					System.out.println("----- Prueba " +nPrueba+" Finalizada -----");
+					salir2=true;
+					break;
+				case 2:
+					vResult = ri.restaVectores(v1, v2);
+					System.out.println("AL VOLVER DEL SERVIDOR:");
+					System.out.println("V1: " +v1.toString());
+					System.out.println("V2: " +v2.toString());
+					System.out.println("VECTOR RESTA: " +vResult.toString());
+					System.out.println("----- Prueba " +nPrueba+" Finalizada -----");
+					salir2=true;
+					break;	
+				case 0:
+					System.out.println("----- Programa Finalizado -----");
+					salir2=true;
+					salir1=true;
+					break;		
+				default:
+					System.out.println("La opcion ingresada no corresponde.");
+						salir2=false;
+				}
+			}while (!salir2);	
+			System.out.println("");
+			System.out.println("///////////////////////////////////////////////////////////////");
+			System.out.println("");
+			nPrueba++;
+		}while (!salir1);	
 			
 		} catch (RemoteException e) {
 			e.printStackTrace();
