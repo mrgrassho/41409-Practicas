@@ -4,12 +4,12 @@
 ## Pasos para ejecución
 <ul>
   <li>
-    <p> #### 1. Descargar el repositorio:  </p>
+    1. Descargar el repositorio:
     <p> Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP  </p>
+  </li>
   <li>
-  <li>
-    <p> #### 1. Descomprimir ZIP  </p>
+    Descomprimir ZIP 
     <p> En linux </p>
     <p> En Windows </p>
-  <li>
+  </li>
 </ul>
