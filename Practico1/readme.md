@@ -4,7 +4,7 @@
 <ul>
   <li>
     <b>1. Descargar el repositorio:</b>
-    Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP 
+    <p>Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP </p>
   </li>
   <li>
     <b>2. Descomprimir ZIP </b>
@@ -14,29 +14,29 @@
   <li>
     <b> 3. Importar proyecto</b> 
     <p>En Eclipse: </p> 
-              <p> 3.1 Ir a File> Import. </p> 
-              <p> 3.2 Abrir carpeta Maven, seleccionar Existing Maven Proyects y hacer click en Next. </p>
-              <p> 3.3 En la nueva ventana que se abre hacer click en Browse... Buscar el directorio donde se encuentra el proyecto    
+              <p> 3.1   Ir a File> Import. </p> 
+              <p> 3.2   Abrir carpeta Maven, seleccionar Existing Maven Proyects y hacer click en Next. </p>
+              <p> 3.3   En la nueva ventana que se abre hacer click en Browse... Buscar el directorio donde se encuentra el proyecto    
                    descargado</p>
-              <p> 3.4 Luego para finalizar, click en Finish</p>
+              <p> 3.4   Luego para finalizar, click en Finish</p>
   </li>
    <li>
     <b>4. Ejecuciòn.</b>
     <p>Tendrà que ser en este orden para poder lograr el objetivo de los ejercicios: </p>
-       <p>4.1 Ejecutar el servidor </p>
-          <p>     -Para punto1: ServerTCP </p>
-           <p>    -Para punto2: ServerTCP </p>
-           <p>    -Para punto3y4: MQServer </p>
-           <p>    -Para punto5: ServerMain </p>
-           <p>    -Para punto6: ServerMain </p>
-           <p>    -Para punto6: ServerMain </p>
-       <p> 4.2 Ejecutar el Cliente
-           <p>    -Para punto1: CLientTCP </p>
-           <p>    -Para punto2: CLientTCP </p>
-           <p>    -Para punto3y4: MQCLient </p>
-           <p>    -Para punto5: ClientRMI </p>
-           <p>    -Para punto6: ClientRMI </p>
-           <p>    -Para punto6: ClienteMain </p>
+       <p>4.1   Ejecutar el servidor </p>
+          <p>     -   Para punto1: ServerTCP </p>
+           <p>    -   Para punto2: ServerTCP </p>
+           <p>    -   Para punto3y4: MQServer </p>
+           <p>    -   Para punto5: ServerMain </p>
+           <p>    -   Para punto6: ServerMain </p>
+           <p>    -   Para punto6: ServerMain </p>
+       <p> 4.2   Ejecutar el Cliente
+           <p>    -   Para punto1: CLientTCP </p>
+           <p>    -   Para punto2: CLientTCP </p>
+           <p>    -   Para punto3y4: MQCLient </p>
+           <p>    -   Para punto5: ClientRMI </p>
+           <p>    -   Para punto6: ClientRMI </p>
+           <p>    -   Para punto6: ClienteMain </p>
    </li>
 </ul>
 
