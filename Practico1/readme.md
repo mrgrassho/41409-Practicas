@@ -1,22 +1,43 @@
 ﻿# INFORME - TP1
  
-## Pasos para su ejecución
+## Pasos para su implementaciòn
 <ul>
   <li>
-    1. Descargar el repositorio:
-    <p> Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP  </p>
+    <b>1. Descargar el repositorio:</b>
+    Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP 
   </li>
   <li>
-    2. Descomprimir ZIP 
-    <p> En linux: en Terminal ubicarse en la carpeta del ZIP e ingresar "unzip  41409-Practicas-master.zip  <u>carpeta</u>" </p>
-    <p> En Windows: Click derecho en 41409-Practicas-master.zip > Extraer Aqui. </p>
+    <b>2. Descomprimir ZIP </b>
+    En linux: en Terminal ubicarse en la carpeta del ZIP e ingresar "unzip  41409-Practicas-master.zip  <u>carpeta</u>"
+    En Windows: Click derecho en 41409-Practicas-master.zip > Extraer Aqui.
   </li>
   <li>
-    2. Importar proyecto 
-    <p> En Eclipse ir a File> Import. </p>
-    <p> Abrir carpeta Maven, seleccionar Existing Maven Proyects y poner Next. 
-    <p> En la nueva ventana que se abre hacer click en Browse... Buscar el directorio donde se encuentra el proyecto descargado y luego para finalizar, click en Finish</p>
+    <b> 3. Importar proyecto</b> 
+    En Eclipse: 
+               3.1 Ir a File> Import. 
+               3.2 Abrir carpeta Maven, seleccionar Existing Maven Proyects y poner Next. 
+               3.3 En la nueva ventana que se abre hacer click en Browse... Buscar el directorio donde se encuentra el proyecto    
+                   descargado
+               3.4 Luego para finalizar, click en Finish
   </li>
+   <li>
+    <b>4. Ejecuciòn.</b>
+    Tendrà que ser en este orden para poder lograr el objetivo de los ejercicios:
+       4.1 Ejecutar el servidor
+            -Para punto1: ServerTCP
+            -Para punto2: ServerTCP
+            -Para punto3y4: MQServer
+            -Para punto5: ServerMain
+            -Para punto6: ServerMain
+            -Para punto6: ServerMain
+       4.2 Ejecutar el Cliente
+            -Para punto1: CLientTCP
+            -Para punto2: CLientTCP
+            -Para punto3y4: MQCLient
+            -Para punto5: ClientRMI
+            -Para punto6: ClientRMI
+            -Para punto6: ClienteMain
+   </li>
 </ul>
 
 ## Conclusiones
