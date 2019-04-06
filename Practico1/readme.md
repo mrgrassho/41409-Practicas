@@ -1,6 +1,7 @@
-﻿# INFORME - TP1
- 
-## Pasos para su implementaciòn
+
+# INFORME - TP1
+
+## Pasos para su implementación
 <ul>
   <li>
     <b>1. Descargar el repositorio:</b>
@@ -12,17 +13,17 @@
     <p>En Windows: Click derecho en 41409-Practicas-master.zip > Extraer Aqui. </p>
   </li>
   <li>
-    <b> 3. Importar proyecto</b> 
-    <p>En Eclipse: </p> 
-              <p> 3.1   Ir a File> Import. </p> 
+    <b> 3. Importar proyecto</b>
+    <p>En Eclipse: </p>
+              <p> 3.1   Ir a File> Import. </p>
               <p> 3.2   Abrir carpeta Maven, seleccionar Existing Maven Proyects y hacer click en Next. </p>
               <p> 3.3   En la nueva ventana que se abre hacer click en Browse... Buscar el directorio donde se encuentra el proyecto    
                    descargado</p>
               <p> 3.4   Luego para finalizar, click en Finish</p>
   </li>
    <li>
-    <b>4. Ejecuciòn.</b>
-    <p>Tendrà que ser en este orden para poder lograr el objetivo de los ejercicios: </p>
+    <b>4. Ejecución.</b>
+    <p>Tendrá que ser en este orden para poder lograr el objetivo de los ejercicios: </p>
       <li><p>4.1   Ejecutar el servidor </p>
           <p>     -   Para punto1: ServerTCP </p>
            <p>    -   Para punto2: ServerTCP </p>
@@ -43,9 +44,8 @@
 </ul>
 
 ## Conclusiones
-<p> 1) Resultado: El mensaje se enviò desde el cliente hasta el servidor, y se obtuvo una respuesta con ese mismo mensaje aclarando quien lo envìa. Como observaciòn, se aclara que el Servidor no puede aceptar la peticiòn de mas de un cliente al mismo tiempo. </p>
+<p> 1) Resultado: El mensaje se envió desde el cliente hasta el servidor, y se obtuvo una respuesta con ese mismo mensaje aclarando quien lo envía. Como observación, se aclara que el Servidor no puede aceptar la petición de mas de un cliente al mismo tiempo. </p>
 
-<p> 6) Al introducir el error desde el lado del servidor, especificamente en la linea de codigo 15 y 35 de las funciones de suma y de resta respectivamente, se puede apreciar que uno de los dos vectores se inicializa nuevamente, por ende queda vacìo. 
+<p> 6) Al introducir el error desde el lado del servidor, especificamente en la linea de codigo 15 y 35 de las funciones de suma y de resta respectivamente, se puede apreciar que uno de los dos vectores se inicializa nuevamente, por ende queda vacío.
 Cuando volvemos al cliente, con el resultado de la suma o resta de los vectores, vemos que siguen con los mismos valores que se cargo del lado del cliente, sin sufrir los cambios que se hicieron anteriormente en los procesos del servidor. </p>
-<p>Se concluye que la forma de pasajes de parametros por RMI es "por valor". No puede ser "por referencia" debido que, al poder estar ubicados en distintos lugares y equipos, no tendràn un esquema de direcciones a memoria en comun para acceder a los datos de las variables.</p>
-
+<p>Se concluye que la forma de pasajes de parametros por RMI es "por valor". No puede ser "por referencia" debido que, al poder estar ubicados en distintos lugares y equipos, no tendrán un esquema de direcciones a memoria en comun para acceder a los datos de las variables.</p>
