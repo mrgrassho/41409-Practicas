@@ -1,4 +1,4 @@
-package Practico1.Punto7;
+package Punto7;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;

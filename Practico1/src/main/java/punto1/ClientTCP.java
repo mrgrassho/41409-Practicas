@@ -1,4 +1,5 @@
-package punto1;
+package Punto1;
+
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import java.io.BufferedReader;

@@ -1,4 +1,4 @@
-package punto1;
+package Punto1;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package punto2;
+package Punto2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class ClientTCP {
 			msj =  scannerMSJ.nextLine();
 			//msj= "Hola";  //Para tests rapidos (con un mensaje por defecto) descomentar esta linea; comentar las tres lineas anteriores.
 			
-			msj+= ". {Usuario Aleatorio n°"+numClient +"}"; 
+			msj+= ". {Usuario Aleatorio nï¿½"+numClient +"}"; 
 			outputChannel.println(msj);
 			outputChannel.println ("----Mensaje enviado a Servidor----");
 			String response = inputChannel.readLine();
