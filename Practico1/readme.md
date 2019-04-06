@@ -4,7 +4,7 @@
 <ul>
   <li>
     <b>1. Descargar el repositorio:</b>
-    <p>Una vez ingresado al link de GitHub hacer click en Clone or Downland > Download ZIP </p>
+    <p>Una vez ingresado al link del repositorio GitHub hacer click en Clone or Downland (color verde) > Download ZIP </p>
   </li>
   <li>
     <b>2. Descomprimir ZIP </b>
@@ -23,23 +23,25 @@
    <li>
     <b>4. Ejecuciòn.</b>
     <p>Tendrà que ser en este orden para poder lograr el objetivo de los ejercicios: </p>
-       <p>4.1   Ejecutar el servidor </p>
+      <li><p>4.1   Ejecutar el servidor </p>
           <p>     -   Para punto1: ServerTCP </p>
            <p>    -   Para punto2: ServerTCP </p>
            <p>    -   Para punto3y4: MQServer </p>
            <p>    -   Para punto5: ServerMain </p>
            <p>    -   Para punto6: ServerMain </p>
            <p>    -   Para punto6: ServerMain </p>
-       <p> 4.2   Ejecutar el Cliente
+       </li>
+       <li><p> 4.2   Ejecutar el Cliente
            <p>    -   Para punto1: CLientTCP </p>
            <p>    -   Para punto2: CLientTCP </p>
            <p>    -   Para punto3y4: MQCLient </p>
            <p>    -   Para punto5: ClientRMI </p>
            <p>    -   Para punto6: ClientRMI </p>
            <p>    -   Para punto6: ClienteMain </p>
+       </li>
    </li>
 </ul>
-
+<li>
 ## Conclusiones
 <p> 1) Resultado: El mensaje se enviò desde el cliente hasta el servidor, y se obtuvo una respuesta con ese mismo mensaje aclarando quien lo envìa. Como observaciòn, se aclara que el Servidor no puede aceptar la peticiòn de mas de un cliente al mismo tiempo. </p>
 
