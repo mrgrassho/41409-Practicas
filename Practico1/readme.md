@@ -41,7 +41,7 @@
        </li>
    </li>
 </ul>
-<li>
+
 ## Conclusiones
 <p> 1) Resultado: El mensaje se enviò desde el cliente hasta el servidor, y se obtuvo una respuesta con ese mismo mensaje aclarando quien lo envìa. Como observaciòn, se aclara que el Servidor no puede aceptar la peticiòn de mas de un cliente al mismo tiempo. </p>
 
