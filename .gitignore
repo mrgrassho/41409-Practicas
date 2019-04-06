@@ -1,2 +1,5 @@
 41409-Practicas/
 unlu2019/
+**/.idea/
+**/target/
+.project
