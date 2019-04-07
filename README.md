@@ -1,3 +1,6 @@
-# 41409-Practicas
+# 41409 - Prácticas
 Repositorio con los TPs de Sistemas Distribuidos y Programación Paralela.
-Integrantes: Victorio Scafati y Matias Rolon
+
+## Informes
+
+- [TP1 - INFORME](Practico1/readme.md)
