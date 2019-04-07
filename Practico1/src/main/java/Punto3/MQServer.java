@@ -29,18 +29,9 @@ public class MQServer {
 				MQThreadServer ts = new MQThreadServer(client,  this.messageQueue);
 				Thread tsThread = new Thread (ts);
 				tsThread.start();
-				tsThread.join();
-				if (ts.getMessage() != null)
-					this.messageQueue.add(ts.getMessage());
-				for (String str : ts.getElemToRemove()) {
-					int k = this.messageQueue.indexOf(str);
-					this.messageQueue.remove(k);
-				}
 			}
 		} catch (IOException e) {
 			System.out.println("Port in use");
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 	}
 	public static void main(String[] args) {
