@@ -6,10 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
-import javax.swing.plaf.synth.SynthSpinnerUI;
+import org.json.JSONObject;
 
 public class MQClient {
 	static String IP = "localhost";
@@ -58,7 +57,7 @@ public class MQClient {
 	public static void menuCli(int id) {
 		System.out.println();
 		System.out.println("Bandeja del Cliente -> " + String.valueOf(id));
-		System.out.println("send [id-client] [MSG]\t\tEnviar un mensaje, el MSG debe ser una sola palabra (sin espacios).");
+		System.out.println("send [id-client]\t\tEnviar un mensaje a un cliente.");
 		System.out.println("read\t\t\tLeer mensajes");
 		System.out.println("help\t\t\tMuestra este mensaje.");
 		System.out.println("exit\t\t\tSalir.");
@@ -73,25 +72,42 @@ public class MQClient {
 	public static void interpretCmd(String line, MQClient cliente) throws IOException {
 		String[] args = splitArgs(line);
 		String command = args[0];
-		int idOrigen , idDestino;
+		int idDestino;
 		if (command.equals("send")) {
-			if (cliente != null && args.length == 3) {
+			if (cliente != null && args.length == 2) {
 				idDestino = Integer.parseInt(args[1]);
-				String msg = args[2];
+				System.out.println("Ingrese el Asunto del msj: ");
+				String asunto = scanner.nextLine();
+				System.out.println("Ingrese el cuerpo del msj: ");
+				String body = scanner.nextLine();
+				String msg = new JSONObject()
+		                  .put("asunto", asunto)
+						  .put("body", body).toString();
 				if (msg == null) System.err.println("Debe ingresar un mensaje.");
 				cliente.writeMsg("SEND");
 				cliente.writeMsg(idDestino, msg);
 				System.out.println("Msg sent!");
+			} else {
+				System.err.println("Msg no enviado");
 			}
 		} else if (command.equals("read")) {
 			if (cliente != null && args.length == 1) {
 				cliente.writeMsg("RECV");
 				String msgX = cliente.readMsg();
+				int c = 1;
 				while(!msgX.trim().equals("No messages.")) {
-					System.out.println(msgX);
+					JSONObject jsonMsg = new JSONObject(msgX);
+					System.out.println("\t----- MENSAJE " + c + "-----");
+					System.out.println("ASUNTO:\n\t" + jsonMsg.get("asunto"));
+					System.out.println("BODY:\n\t" + jsonMsg.get("body"));
+					c++;
 					msgX = cliente.readMsg();
 				}
-				System.out.println("No messages.");
+				if (c > 1) {
+					System.out.println("[!] No hay mas mensajes.");
+				} else {
+					System.out.println("[!] No hay mensajes.");
+				}
 			}
 		} else if (command.equals("help")) {
 				menuCli(cliente.getClientId());
@@ -112,10 +128,7 @@ public class MQClient {
 
 	
 	public static void main(String[] args) throws IOException {
-		int opt;
-		int idOrigen;
-		int idDestino;
-		System.out.println("Ingrese el ID del nuevo cliente");
+		System.out.print("Ingrese el ID del nuevo cliente -> ");
 		while ((!scanner.hasNextInt())) {scanner.next();}
 		int cc = scanner.nextInt();
 		MQClient cliente = new MQClient(cc, IP, PORT);

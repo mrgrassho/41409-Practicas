@@ -17,7 +17,7 @@ public class MQThreadServer implements Runnable{
 		this.messageQueue =  messageQueue;
 	}
 	
-	public synchronized void run() {	
+	public void run() {	
 		try {
 			ArrayList<String> ToRemove = new ArrayList<String>();
 			BufferedReader inputChannel = new BufferedReader (new InputStreamReader (this.client.getInputStream()));
@@ -25,9 +25,7 @@ public class MQThreadServer implements Runnable{
 			while(!client.isClosed()) {
 				String opt = inputChannel.readLine();
 				if (opt.substring(opt.indexOf("|")+1, opt.length()).equals("SEND")) {
-					synchronized (messageQueue) {
-						messageQueue.add(inputChannel.readLine());
-					}
+					messageQueue.add(inputChannel.readLine());
 				} else if (opt.substring(opt.indexOf("|")+1, opt.length()).equals("RECV")) {
 					String srcId = opt.substring(0, opt.indexOf("|"));
 					
@@ -36,7 +34,7 @@ public class MQThreadServer implements Runnable{
 							String destId = str.substring(0, str.indexOf("|"));
 							String sendMsg = str.substring(str.indexOf("|")+1, str.length());
 							if (destId.equals(srcId)) {
-								outputChannel.println("To: " + destId + " - Msg : " + sendMsg);
+								outputChannel.println(sendMsg);
 								String ack = inputChannel.readLine();
 								if (ack.substring(ack.indexOf("|")+1, ack.length()).compareTo("ACK") == 0) {
 									ToRemove.add(str);
@@ -46,10 +44,8 @@ public class MQThreadServer implements Runnable{
 					}
 					outputChannel.println("No messages.");	
 				}
-				synchronized (messageQueue) {
-					for (String string : ToRemove) {
+				for (String string : ToRemove) {
 						messageQueue.remove(string);
-					}
 				}
 			}
 			this.client.close();
