@@ -1,4 +1,4 @@
-package Punto1;
+package punto1;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
