@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+<!--  URL base: https://www.baeldung.com/logback -->
+ <!--  DEFINE CONSOLE OUT PARAMETERS -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss} [%thread] %-5level - %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+ <!--  DEFINE FILE PARAMETERS -->
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+  	<!--  THIS TAKES NAME FROM CREATION CLASS -->
+  	<!--  String packetName=Server.class.getSimpleName().toString();
+		System.setProperty("log.name",packetName);//Defino el nombre del archivo de log-->
+    <file>${log.name}.log</file>
+    <encoder>
+      <pattern>%d{HH:mm:ss} [%thread] %-5level - %msg%n</pattern>
+    </encoder>
+  </appender>
+ 
+  <root level="debug">
+  <!--  THIS DEFINES WHICH CONFIGURATION IS ENABLED TO USE -->
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="FILE" />
+  </root>
+ 
+  <logger name="ejer1" additivity="true" level="info">
+      <appender-ref ref="FILE" />
+  </logger>
+  
+  <logger name="ejer2" additivity="true" level="info">
+      <appender-ref ref="FILE" />
+  </logger>
+  
+  <logger name="ejer3" additivity="true" level="info">
+      <appender-ref ref="FILE" />
+  </logger>
+</configuration>
