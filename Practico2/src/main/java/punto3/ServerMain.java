@@ -5,12 +5,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -24,9 +24,8 @@ public class ServerMain {
 	private ConnectionFactory connectionFactory;
 	private Connection queueConnection;
 	private Channel queueChannel;
-	private String inputQueue;
-	private String outputQueue;
-	private Gson googleJson;
+	private String inputQueueName;
+	private String outputQueueName;
 	private String ip;
 	private int port;
 	private ServerSocket ss;
@@ -36,25 +35,22 @@ public class ServerMain {
 		this.port = port;
 		this.username = "admin";
 		this.password = "admin";
-		this.inputQueue = "InputQueue";
-		this.outputQueue = "OutputQueue";
+		this.inputQueueName = "inputQueue";
+		this.outputQueueName = "outputQueue";
 		this.configureConnectionToRabbit();
 		log.info(" RabbitMQ - Connection established");
-		this.configureServer();
 	}
 	
 	private void configureConnectionToRabbit() {
-		
 		try {
-			this.googleJson = new Gson();
 			this.connectionFactory = new ConnectionFactory();
 			this.connectionFactory.setHost(this.ip);
 			this.connectionFactory.setUsername(this.username);
 			this.connectionFactory.setPassword(this.password);
 			this.queueConnection = this.connectionFactory.newConnection();
 			this.queueChannel = this.queueConnection.createChannel();
-			this.queueChannel.queueDeclare(this.inputQueue, true, false, false, null);
-			this.queueChannel.queueDeclare(this.outputQueue, true, false, false, null);
+			this.queueChannel.queueDeclare(this.inputQueueName, true, false, false, null);
+			this.queueChannel.queueDeclare(this.outputQueueName, true, false, false, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -66,11 +62,15 @@ public class ServerMain {
 		try {
 			ServerSocket ss = new ServerSocket (this.port);
 			log.info("Server started on " + this.port);
+			Random r = new Random();
 			while (true) {
 				Socket client = ss.accept();
-				log.info("Client connected from " + client.getInetAddress().getCanonicalHostName()+" : "+client.getPort());
-				ThreadServer ts = new ThreadServer(client, this.queueChannel, this.inputQueue, this.outputQueue);
-				Thread tsThread = new Thread (ts);
+				log.info("Client connected from " + client.getInetAddress().getCanonicalHostName()+":"+client.getPort());
+				// Genera un ID Random de para el Thread -> TODO: Reemplazar por funcion mas potente.
+				Long routingKey =  r.nextLong();
+				if (routingKey < 0) routingKey *= -1;
+				ThreadServer ts = new ThreadServer(client, routingKey, this.queueChannel, this.inputQueueName, this.outputQueueName, log);
+				Thread tsThread = new Thread(ts);
 				tsThread.start();
 			}
 		} catch (IOException e) {
@@ -79,6 +79,9 @@ public class ServerMain {
 	}
 
 	public static void main(String[] args) {
+		int thread = (int) Thread.currentThread().getId();
+		String packetName = ServerMain.class.getSimpleName().toString()+"-"+thread;
+		System.setProperty("log.name",packetName);
 		ServerMain ss = new ServerMain("localhost",8090);
 		ss.startServer();
 	}
