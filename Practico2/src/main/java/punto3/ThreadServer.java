@@ -17,14 +17,14 @@ public class ThreadServer implements Runnable{
 	private Channel queueChannel;
 	private String inputQueueName;
 	private String outputQueueName;
-	private Long routingKey;
+	private String routingKey;
 	private Gson googleJson;
 	private Logger log;
-	private static final String EXCHANGE_NAME = "direct_logs";
+	private static final String EXCHANGE_NAME = "directOutput";
 	
 	public ThreadServer(Socket client, Long routingKey, Channel queueChannel, String inputQueueName, String outputQueueName, Logger log) {
 		this.client = client;
-		this.routingKey = routingKey;
+		this.routingKey = String.valueOf(routingKey);
 		this.queueChannel = queueChannel;
 		this.inputQueueName = inputQueueName;
 		this.outputQueueName = outputQueueName;
@@ -36,13 +36,29 @@ public class ThreadServer implements Runnable{
 		try {
 			ObjectOutputStream outputChannel = new ObjectOutputStream (this.client.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (this.client.getInputStream());
-		
-			Message decodedMsg = (Message) inputChannel.readObject();
-			this.log.info("Client has sent a msg");
-			String body = (String) decodedMsg.getBody();
-			this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
+			queueChannel.exchangeDeclare(EXCHANGE_NAME, "direct");
+			while (true) {
+				Message decodedMsg = (Message) inputChannel.readObject();
+				this.log.info("Client has sent a msg");
+				String body = (String) decodedMsg.getBody();
+				this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
+				
+				// Funcion que se ejecuta cada vez que hay un mensaje disponible.
+				DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+		            String str = new String(delivery.getBody(), "UTF-8");
+		            Message message = new Message("ID:"+routingKey, str);
+		            outputChannel.writeObject(message);
+		            log.info(" [+] Msg sent. - '" + delivery.getEnvelope().getRoutingKey() + "':'" + message.getBody() + "'");
+				};
+				// Bind Queue 
+				queueChannel.queueBind(this.outputQueueName, EXCHANGE_NAME, this.routingKey);
+				
+				this.queueChannel.basicConsume(outputQueueName, true, deliverCallback, consumerTag -> {
+					// Unbind Queue
+					queueChannel.queueUnbind(this.outputQueueName, EXCHANGE_NAME, this.routingKey);
+				});
+			}
 			
-			outputChannel.writeObject("RECIBIDO");
 		} catch (IOException e) {
 			log.info("Error -> ",e);
 		} catch (ClassNotFoundException e) {
