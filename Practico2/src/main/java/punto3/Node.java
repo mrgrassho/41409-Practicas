@@ -12,7 +12,7 @@ public class Node {
 		this.name = name;
 		this.ip = ip;
 		this.port = port;
-		services = new ArrayList<>();
+		services = new ArrayList<Service>();
 	}
 	
 	public String getName() {
