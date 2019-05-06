@@ -39,6 +39,7 @@ public class ThreadServer implements Runnable{
 			queueChannel.exchangeDeclare(EXCHANGE_NAME, "direct");
 			while (true) {
 				Message decodedMsg = (Message) inputChannel.readObject();
+				decodedMsg.addHeader("token-id", String.valueOf(routingKey));
 				this.log.info("Client has sent a msg");
 				String body = (String) decodedMsg.getBody();
 				this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
@@ -46,7 +47,7 @@ public class ThreadServer implements Runnable{
 				// Funcion que se ejecuta cada vez que hay un mensaje disponible.
 				DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 		            String str = new String(delivery.getBody(), "UTF-8");
-		            Message message = new Message("ID:"+routingKey, str);
+		            Message message = new Message(str);
 		            outputChannel.writeObject(message);
 		            log.info(" [+] Msg sent. - '" + delivery.getEnvelope().getRoutingKey() + "':'" + message.getBody() + "'");
 				};

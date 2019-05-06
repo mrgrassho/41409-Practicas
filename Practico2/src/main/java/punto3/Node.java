@@ -7,12 +7,16 @@ public class Node {
 	private String name;
 	private String ip;
 	private int port; 
+	private int cargaMax;
+	private int cargaActual;
 	
-	public Node(String name, String ip, int port) {
+	public Node(String name, String ip, int port, int cargaMax) {
 		this.name = name;
 		this.ip = ip;
 		this.port = port;
 		services = new ArrayList<>();
+		this.cargaMax = cargaMax;
+		this.cargaActual = 0;
 	}
 	
 	public String getName() {

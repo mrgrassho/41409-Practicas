@@ -27,7 +27,7 @@ public class ClientTCP {
 			msj =  scannerMSJ.nextLine();
 			//msj= "Hola";  //Para tests rapidos (con un mensaje por defecto) descomentar esta linea; comentar las tres lineas anteriores.
 			
-			Message k = new Message("$##$", msj);
+			Message k = new Message(msj);
 			outputChannel.writeObject(k);
 			String response = (String) inputChannel.readObject();
 			
