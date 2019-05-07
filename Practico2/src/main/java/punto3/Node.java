@@ -6,12 +6,12 @@ public class Node {
 	ArrayList<Service> services;
 	private String name;
 	private String ip;
-	private int port; 
+	private int port;
 	private int maxLoad;
 	private int currentLoad;
 	private float percentageLoad;
 	private NodeState nodeState;
-	
+
 	public Node(String name, String ip, int port, int maxLoad) {
 		this.name = name;
 		this.ip = ip;
@@ -21,8 +21,10 @@ public class Node {
 		this.currentLoad = 0;
 		this.percentageLoad = 0;
 		this.nodeState = NodeState.IDLE;
+		this.cargaMax = cargaMax;
+		this.cargaActual = 0;
 	}
-	
+
 	public int getMaxLoad() {
 		return maxLoad;
 	}
@@ -40,7 +42,7 @@ public class Node {
 		this.updatePercentageLoad();
 		this.updateState();
 	}
-	
+
 	public void decreaseCurrentLoad(int currentLoad) {
 		this.currentLoad -= currentLoad;
 		this.updatePercentageLoad();
@@ -70,19 +72,19 @@ public class Node {
 	public String getName() {
 		return name;
 	}
-	
+
 	public void addService(Service service) {
 		this.services.add(service);
 	}
-	
+
 	public void delService(Service service) {
 		this.services.remove(service);
 	}
-	
+
 	public ArrayList<Service> getServices() {
 		return this.services;
 	}
-	
+
 	public float getPercentageLoad() {
 		return percentageLoad;
 	}
