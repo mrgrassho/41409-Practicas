@@ -90,7 +90,7 @@ public class NodeMain {
 		int thread = (int) Thread.currentThread().getId();
 		String packetName = ServerMain.class.getSimpleName().toString()+"-"+thread;
 		System.setProperty("log.name",packetName);
-		NodeMain ss = new NodeMain(new Node("Nodo1", "localhost", 8071), "localhost");
+		NodeMain ss = new NodeMain(new Node("Nodo1", "localhost", 8071,10), "localhost");
 		ss.startServer();
 	}
 

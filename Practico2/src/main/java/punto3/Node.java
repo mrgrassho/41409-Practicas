@@ -21,8 +21,6 @@ public class Node {
 		this.currentLoad = 0;
 		this.percentageLoad = 0;
 		this.nodeState = NodeState.IDLE;
-		this.cargaMax = cargaMax;
-		this.cargaActual = 0;
 	}
 
 	public int getMaxLoad() {

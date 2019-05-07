@@ -61,7 +61,7 @@ public class Dispatcher {
 
 	private void loadNodeConfiguration(String string) {
 		// TODO Auto-generated method stub
-		nodos= new ArrayList<>();
+		nodos= new ArrayList<Node>();
 	}
 
 	private void configureConnectionToRabbit() {
