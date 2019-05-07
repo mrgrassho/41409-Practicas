@@ -18,7 +18,9 @@ import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DeliverCallback;
+import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
@@ -33,6 +35,7 @@ public class Dispatcher {
 	private String processQueueName = "processQueue";
 	private String nextNodeQueueName = "nextNodeQueue";
 	private String notificationQueueName = "notificationQueue";
+	private String activesQueueName = "activeQueue";
 	private String ip;
 	private int port;
 	private Node nodoActual;
@@ -44,6 +47,7 @@ public class Dispatcher {
 	private static final int MAX_RETRIES_IN_NODE = 80;
 	Gson googleJson;
 	public GetResponse response;
+	private GlobalState globalState;
 
 	public Dispatcher(String ip, int port) {
 		this.ip = ip;
@@ -70,8 +74,9 @@ public class Dispatcher {
 			this.queueChannel = this.queueConnection.createChannel();
 			this.queueChannel.queueDeclare(this.inputQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.processQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.nextNodeQueueName, true, false, false, null);
+			this.queueChannel.queueDeclare(this.nextNodeQueueName, true, true, false, null);
 			this.queueChannel.queueDeclare(this.notificationQueueName, true, false, false, null);
+			this.queueChannel.queueDeclare(this.activesQueueName, true, false, false, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -87,6 +92,14 @@ public class Dispatcher {
 		}
 		return nodosActivos.get(i);
 	}
+	
+	private Node getNextNodeSafe() {
+		Node n; 
+		do {
+			n = getNextNode();
+		} while (n.getNodeState() != NodeState.CRITICAL);
+		return n;
+	}
 
 	public void msgDispatch() throws IOException {
 		queueChannel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
@@ -97,6 +110,7 @@ public class Dispatcher {
 			boolean msjSent = false;
 			int cntRetries = 0;
 			while (!msjSent && cntRetries < MAX_RETRY) {
+				// NAck the msg
 				GetResponse data = this.queueChannel.basicGet(nextNodeQueueName, false);
 				nodoActual = googleJson.fromJson(new String(data.getBody(),"UTF-8"), Node.class);
 				// Check if nextNode is active
@@ -122,20 +136,24 @@ public class Dispatcher {
 						}
 						retriesInNode++;
 					}
-					
-					// Actualiza el Nodo
-					Node n = getNextNode();
-					// Escribe el cola de siguiente.
-					
-					
+
+					// Updates next Node
+					Node n = getNextNodeSafe();
+					// Ack the msg == Deletes the msg from the Queue
+					this.queueChannel.basicGet(nextNodeQueueName, true);
+					// Writes the next Node in NextNodeQueue
+					String JsonMsg = googleJson.toJson(n);
+					this.queueChannel.basicPublish("", nextNodeQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, JsonMsg.getBytes("UTF-8"));
+
 					if (flag) {
 						// Proceso Msj
 						response = this.queueChannel.basicGet(notificationQueueName, true);
 						msjSent = true;
-						log.info(" [+] Msg arrived!");
+						log.info(" [+] Msg notification arrived!");
 					} else {
-						log.info(" [+] Re-sending msg to " + nodoActual.getName()); 
+						log.info(" [+] Re-sending msg to " + n.getName()); 
 					}
+
 					this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_NOTIFICATION, message.getHeader("token-id"));
 					cntRetries++;
 				}
@@ -147,9 +165,13 @@ public class Dispatcher {
 	/*
 	 * Checks Node's health and creates/remove nodes when necessary.  
 	 * */	
-	private void healthChecker() {
-		// TODO Auto-generated method stub
-		
+	private void healthChecker() throws IOException {
+		new Thread()
+		{
+		    public void run() {
+		    		
+		    }
+		}.start();
 	}
 
 	public void startServer() {
@@ -159,11 +181,43 @@ public class Dispatcher {
 			this.msgDispatch();
 			// Init RabbitMQ Thread that listens to ActiveQueue
 			this.healthChecker();
+			this.queueChannel.basicConsume(inputQueueName, false, cntInputDeliverCallback, consumerTag -> {});
+			// Listens node's activesQueue
+			this.queueChannel.basicConsume(activesQueueName, false, ActiveNodeDeliverCallback, consumerTag -> {});
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+	
+	private void updateGlobalState(int cnt){
+		for (Node node : nodosActivos) {
+			
+		}
+	}
+	
+	DeliverCallback cntInputDeliverCallback = (consumerTag, delivery) -> {
+		long cnt = this.queueChannel.messageCount(inputQueueName);
+		//updateGlobalState(cnt);
+	};
 
+	DeliverCallback ActiveNodeDeliverCallback = (consumerTag, delivery) -> {
+		Node n = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Node.class);
+		int indx = nodosActivos.indexOf(n);
+		if (indx != -1) {
+			if (n.getNodeState() == NodeState.IDLE) {
+				nodosActivos.remove(n);
+				if (this.queueChannel.messageCount(n.getName()) == 0) {
+					this.queueChannel.queueDelete(n.getName());
+				}
+			} else {
+				nodosActivos.set(indx, n);
+			}
+		} else {
+			this.queueChannel.queueDeclare(n.getName(), true, false, false, null);
+			nodosActivos.add(n);
+		}
+	};
+	
 
 	public static void main(String[] args) {
 		int thread = (int) Thread.currentThread().getId();
