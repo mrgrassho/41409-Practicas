@@ -70,6 +70,7 @@ public class ServerMain {
 				Long routingKey =  r.nextLong();
 				if (routingKey < 0) routingKey *= -1;
 				ThreadServer ts = new ThreadServer(client, routingKey, this.queueChannel, this.inputQueueName, this.outputQueueName, log);
+				log.info("Nuevo TrheadServer: "+ routingKey);
 				Thread tsThread = new Thread(ts);
 				tsThread.start();
 			}

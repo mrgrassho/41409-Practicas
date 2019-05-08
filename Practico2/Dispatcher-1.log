@@ -1,0 +1,23 @@
+18:09:27 [main] INFO  -  RabbitMQ - Connection established
+18:09:27 [main] INFO  -  Dispatcher Started
+18:12:50 [main] INFO  -  RabbitMQ - Connection established
+18:12:50 [main] INFO  -  Dispatcher Started
+18:13:59 [pool-1-thread-7] INFO  -  [+] Dispatcher received msg from inputQueue
+18:13:59 [pool-1-thread-7] ERROR - Consumer com.rabbitmq.client.impl.recovery.AutorecoveringChannel$2@79be99db (amq.ctag-Xha9SCNh0NDd24EpvlcAog) method handleDelivery for channel AMQChannel(amqp://admin@127.0.0.1:5672/,1) threw an exception for channel AMQChannel(amqp://admin@127.0.0.1:5672/,1)
+com.google.gson.JsonSyntaxException: java.lang.IllegalStateException: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $
+	at com.google.gson.internal.bind.ReflectiveTypeAdapterFactory$Adapter.read(ReflectiveTypeAdapterFactory.java:226)
+	at com.google.gson.Gson.fromJson(Gson.java:927)
+	at com.google.gson.Gson.fromJson(Gson.java:892)
+	at com.google.gson.Gson.fromJson(Gson.java:841)
+	at com.google.gson.Gson.fromJson(Gson.java:813)
+	at punto3.Dispatcher.lambda$2(Dispatcher.java:154)
+	at com.rabbitmq.client.impl.recovery.AutorecoveringChannel$2.handleDelivery(AutorecoveringChannel.java:585)
+	at com.rabbitmq.client.impl.ConsumerDispatcher$5.run(ConsumerDispatcher.java:149)
+	at com.rabbitmq.client.impl.ConsumerWorkService$WorkPoolRunnable.run(ConsumerWorkService.java:104)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.lang.Thread.run(Unknown Source)
+Caused by: java.lang.IllegalStateException: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $
+	at com.google.gson.stream.JsonReader.beginObject(JsonReader.java:385)
+	at com.google.gson.internal.bind.ReflectiveTypeAdapterFactory$Adapter.read(ReflectiveTypeAdapterFactory.java:215)
+	... 11 common frames omitted

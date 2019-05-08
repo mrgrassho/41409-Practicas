@@ -1,0 +1,43 @@
+18:08:43 [main] INFO  -  RabbitMQ - Connection established
+18:08:43 [main] INFO  - Server started on 8090
+18:08:51 [main] INFO  - Client connected from 127.0.0.1:64471
+18:09:07 [Thread-0] INFO  -  [+] Client has sent a msg
+18:09:52 [main] INFO  -  RabbitMQ - Connection established
+18:09:52 [main] INFO  -  Node A started.
+18:09:52 [main] INFO  -  Node B started.
+18:09:52 [main] INFO  -  Node C started.
+18:10:15 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:41)
+	at java.lang.Thread.run(Unknown Source)
+18:10:21 [main] INFO  -  RabbitMQ - Connection established
+18:10:21 [main] INFO  - Server started on 8090
+18:12:05 [main] INFO  -  RabbitMQ - Connection established
+18:12:05 [main] INFO  - Server started on 8090
+18:12:17 [main] INFO  - Client connected from 127.0.0.1:64511
+18:12:17 [main] INFO  - Nuevo TrheadServer: 4569647633559038502
+18:13:39 [main] INFO  -  RabbitMQ - Connection established
+18:13:39 [main] INFO  -  Node A started.
+18:13:39 [main] INFO  -  Node B started.
+18:13:39 [main] INFO  -  Node C started.
+18:13:59 [Thread-0] INFO  -  [+] Client has sent a msg
+18:17:59 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:41)
+	at java.lang.Thread.run(Unknown Source)

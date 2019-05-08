@@ -64,29 +64,10 @@ public class Dispatcher {
 		this.configureConnectionToRabbit();
 		this.loadNodeConfiguration();
 		log.info(" RabbitMQ - Connection established");
-		this.nodoActual = nodosActivos.get(0);
 		this.purgeQueues();
 	}
 
-	private void loadNodeConfiguration() {
-		try {
-			nodosActivos = new ArrayList<Node>();
-			nodosActivos.add(new Node("NodoA", "localhost", 8899, 20));
-			nodosActivos.add(new Node("NodoB", "localhost", 8890, 20));
-			nodosActivos.add(new Node("NodoC", "localhost", 8891, 20));
-			for (Node node : nodosActivos) {
-				this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
-			}
-			String mString = googleJson.toJson(nodosActivos.get(0));
-			if (this.queueChannel.messageCount(nextNodeQueueName) == 0) {
-				queueChannel.basicPublish("", nextNodeQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
+	/*CARGA CONFIGURACION RABBIT: Declara conexion, canal y colas que va a usar Dispatcher*/
 	private void configureConnectionToRabbit() {
 		try {
 			this.connectionFactory = new ConnectionFactory();
@@ -107,6 +88,29 @@ public class Dispatcher {
 		}
 	}
 	
+	/*CARGA NODOS: Los que empezaran como activos, con una cola de proceso para cada nodo, la cual se llama igual que el nodo*/
+	private void loadNodeConfiguration() {
+		try {
+			nodosActivos = new ArrayList<Node>();
+			//empieza con tres nodos activos, luego ira llamando a los otros bajo demanda
+			nodosActivos.add(new Node("NodoA", "localhost", 8899, 20));
+			nodosActivos.add(new Node("NodoB", "localhost", 8890, 20));
+			nodosActivos.add(new Node("NodoC", "localhost", 8891, 20));
+			for (Node node : nodosActivos) {
+				this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
+			}
+			String mString = googleJson.toJson(nodosActivos.get(0));
+			this.nodoActual = nodosActivos.get(0);
+			if (this.queueChannel.messageCount(nextNodeQueueName) == 0) {//declaro el primer activo como el siguiente nodo a recibir tareas.
+				queueChannel.basicPublish("", nextNodeQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/*PURGAR COLAS: Elimina todos los mensajes que puedan haber en ellas de antes.*/
 	private void purgeQueues() {
 		try {
 			this.queueChannel.queuePurge(this.inputQueueName);
@@ -123,15 +127,16 @@ public class Dispatcher {
 		}
 	}
 
+	/*Devuelve el siguiente nodo al que se le intentará asignar una tarea*/
 	private Node getNextNode() {
 		int i = nodosActivos.indexOf(nodoActual);
 		i++;
-		if (i == nodosActivos.size()) {
-			i = 0;
-		}
+		if (i == nodosActivos.size()) { i = 0; }
+		
 		return nodosActivos.get(i);
 	}
 	
+	/*Devuelve el siguiente nodo en condiciones de recibir la proxima tarea*/
 	private Node getNextNodeSafe() {
 		Node n; 
 		do {
@@ -140,25 +145,26 @@ public class Dispatcher {
 		return n;
 	}
 
+	
 	public void msgDispatch() throws IOException {
 		queueChannel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
 		int MAX_RETRY = nodosActivos.size();
 		DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 			log.info(" [+] Dispatcher received msg from " + delivery.getEnvelope().getRoutingKey());
-			Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
+			Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);//message from ThreadServer
 			boolean msjSent = false;
 			int cntRetries = 0;
-			Node n = nodoActual;
-			while (!msjSent && cntRetries < MAX_RETRY) {
+			Node n = this.nodoActual;
+			while (!msjSent && cntRetries < MAX_RETRY) {//[assign task to node]
 				// NAck the msg
-				if (this.queueChannel.messageCount(nextNodeQueueName) > 0) {
+				if (this.queueChannel.messageCount(nextNodeQueueName) > 0) { // nextNodeQueueName was updated
 					GetResponse data = this.queueChannel.basicGet(nextNodeQueueName, false);
-					nodoActual = googleJson.fromJson(new String(data.getBody(),"UTF-8"), Node.class);
+					this.nodoActual = googleJson.fromJson(new String(data.getBody(),"UTF-8"), Node.class);
 					log.info(" [+] Current Node -> *"+nodoActual.getName());
 				}
+				
 				boolean flag = false;
-				// Check if nextNode is active
-				if (nodosActivos.contains(nodoActual)) {
+				if (nodosActivos.contains(nodoActual)) { // [Check if nextNode is active]
 					String mString = googleJson.toJson(message);
 					queueChannel.basicPublish("", nodoActual.getName(), MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
 					log.info(" [+] Dispatcher sent msg to " +  nodoActual.getName());
@@ -172,10 +178,10 @@ public class Dispatcher {
 					this.queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));
 					log.info(" [+] Dispatcher waiting for outputQueue notify");
 					int retriesInNode = 0;
-					while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) {
+					while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) { 
 						try {
 							if (this.queueChannel.messageCount(notificationQueueName) >= 1) {
-								flag = true;
+								flag = true;  // a TrheadNode finished his task
 							} else {
 								Thread.sleep(RETRY_SLEEP_TIME);
 							}
@@ -193,7 +199,7 @@ public class Dispatcher {
 					// Writes the next Node in NextNodeQueue
 					String JsonMsg = googleJson.toJson(n);
 					this.queueChannel.basicPublish("", nextNodeQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, JsonMsg.getBytes("UTF-8"));
-					if (flag) {
+					if (flag) { //[node finished his task]
 						// Proceso Msj
 						response = this.queueChannel.basicGet(notificationQueueName, true);
 						msjSent = true;
@@ -204,17 +210,15 @@ public class Dispatcher {
 						queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, xString.getBytes("UTF-8"));;
 						// Update Total Load		
 						increaseGlobalCurrentLoad(1);
-					} else {
-						
 					}
 					this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));	
-				}
+				} //FIN if de [Check if nextNode is active]
 				cntRetries++;
 				if (!flag) {
 					if (cntRetries != MAX_RETRY) log.info(" [!] Re-sending msg to " + n.getName());
 					else log.info(" [-] All Nodes are down.");
 				}
-			}
+			}//FIN while [asigna tarea a nodo]
 		};
 		this.queueChannel.basicConsume(inputQueueName, true, deliverCallback, consumerTag -> {});
 	}
@@ -250,21 +254,6 @@ public class Dispatcher {
 		};
 		queueChannel.basicConsume(GlobalStateQueueName, false, deliverCallback, consumerTag -> { });
 	}
-
-	public void startServer() {
-		log.info(" Dispatcher Started");
-		try {
-			// Init RabbitMQ Thread which listens to InputQueue 
-			this.msgDispatch();
-			// Init RabbitMQ Thread that listens to ActiveQueue
-			this.healthChecker();
-			this.queueChannel.basicConsume(inputQueueName, false, cntInputDeliverCallback, consumerTag -> {});
-			// Listens node's activesQueue
-			this.queueChannel.basicConsume(activesQueueName, false, ActiveNodeDeliverCallback, consumerTag -> {});
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 	
 	private void updateGlobal() throws UnsupportedEncodingException, IOException{
 		// if GlobalCurrentLoad represents less than a 20% of GlobalLoad --> GlobalState is IDLE
@@ -289,21 +278,22 @@ public class Dispatcher {
 		return this.globalState;
 	}
 
+	
 	private void increaseGlobalCurrentLoad(int currentLoad) {
 		this.globalCurrentLoad += currentLoad;
 	}
-	
 	private void decreaseGlobalCurrentLoad(int currentLoad) {
 		this.globalCurrentLoad -= currentLoad;	
 	}
 	
+	
 	private void increaseGlobalMaxLoad(int maxLoad) {
 		this.globalMaxLoad += maxLoad;
 	}
-	
 	private void decreaseGlobalMaxLoad(int maxLoad) {
 		this.globalMaxLoad -= maxLoad;
 	}
+	
 	
 	DeliverCallback cntInputDeliverCallback = (consumerTag, delivery) -> {
 		long cnt = this.queueChannel.messageCount(inputQueueName);
@@ -330,6 +320,21 @@ public class Dispatcher {
 		}
 	};
 	
+	
+	public void startServer() {
+		log.info(" Dispatcher Started");
+		try {
+			// Init RabbitMQ Thread which listens to InputQueue 
+			this.msgDispatch();
+			// Init RabbitMQ Thread that listens and updates to ActiveQueue
+			this.healthChecker();
+			this.queueChannel.basicConsume(inputQueueName, false, cntInputDeliverCallback, consumerTag -> {});
+			// Listens node's activesQueue
+			this.queueChannel.basicConsume(activesQueueName, false, ActiveNodeDeliverCallback, consumerTag -> {});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void main(String[] args) {
 		int thread = (int) Thread.currentThread().getId();

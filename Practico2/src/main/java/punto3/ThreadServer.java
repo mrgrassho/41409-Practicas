@@ -44,7 +44,7 @@ public class ThreadServer implements Runnable{
 				String body = (String) decodedMsg.getBody();
 				this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
 				
-				// Funcion que se ejecuta cada vez que hay un mensaje disponible.
+				// Funcion que se ejecuta cada vez que hay un mensaje en la cola de salida disponible.
 				DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 		            String str = new String(delivery.getBody(), "UTF-8");
 		            Message message = new Message(str);
