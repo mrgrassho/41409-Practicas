@@ -40,7 +40,7 @@ public class ThreadServer implements Runnable{
 			while (true) {
 				Message decodedMsg = (Message) inputChannel.readObject();
 				decodedMsg.addHeader("token-id", String.valueOf(routingKey));
-				this.log.info("Client has sent a msg");
+				this.log.info(" [+] Client has sent a msg");
 				String body = (String) decodedMsg.getBody();
 				this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
 				

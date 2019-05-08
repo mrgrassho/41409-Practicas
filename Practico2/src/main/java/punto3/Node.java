@@ -50,11 +50,11 @@ public class Node {
 	private void updateState() {
 		if (getPercentageLoad() == 0) {
 			this.setNodeState(NodeState.IDLE);
-		} else if (getPercentageLoad() <= 0.40) {
+		} else if (getPercentageLoad() < 0.60) {
 			this.setNodeState(NodeState.NORMAL);
-		} else if (getPercentageLoad() <= 0.60) {
+		} else if (getPercentageLoad() < 0.80) {
 			this.setNodeState(NodeState.ALERT);
-		} else if (getPercentageLoad() <= 0.60) {
+		} else {
 			this.setNodeState(NodeState.CRITICAL);
 		}
 	}
@@ -91,4 +91,11 @@ public class Node {
 		this.percentageLoad = getCurrentLoad()/getMaxLoad();
 	}
 
+	
+	@Override
+	public boolean equals(Object node) {
+		if(node instanceof Node)
+			return ((Node) node).getName().equals(this.getName());
+		return false;
+	}
 }
