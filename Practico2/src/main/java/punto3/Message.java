@@ -6,14 +6,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Message implements Serializable {
-	
+	/* PAYLOAD DE PRUEBA
+	  {"header":{"token-id":"2222"},"body":"NUEVA TAREA DE PRUEBA"}
+    */
 	private static final long serialVersionUID = 1L;
 	private Map<String, String> header;
-	private String body;
+	private String functionName;
+	public Map<String, Integer> parametros;
+	private int resultado;
 	
-	public Message(String body) {
+	public Message(String functionName) {
 		super();
-		this.body = body;
+		this.parametros = new HashMap<String,Integer>();
+		this.functionName = functionName;
 		this.header = new HashMap<String,String>();
 	}
 	
@@ -37,10 +42,24 @@ public class Message implements Serializable {
 		this.header.remove(key);
 	}
 	
-	public String getBody() {
-		return body;
+	public String getFunctionName() {
+		return this.functionName;
 	}
-	public void setBody(String body) {
-		this.body = body;
+	
+	public void addParametro(String key, Integer value) {
+		this.parametros.put(key, value);
 	}
+	
+	public void delParametro(String key) {
+		this.parametros.remove(key);
+	}
+	
+	public int getResultado() {
+		return this.resultado;
+	}
+	
+	public void setResultado(int result) {
+		this.resultado = result;
+	}
+	
 }

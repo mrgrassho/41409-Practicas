@@ -41,3 +41,293 @@ java.net.SocketException: Connection reset
 	at java.io.ObjectInputStream.readObject(Unknown Source)
 	at punto3.ThreadServer.run(ThreadServer.java:41)
 	at java.lang.Thread.run(Unknown Source)
+18:51:41 [main] INFO  -  RabbitMQ - Connection established
+18:51:41 [main] INFO  - Server started on 8090
+18:51:59 [main] INFO  - Client connected from 127.0.0.1:64961
+18:52:00 [main] INFO  - Nuevo TrheadServer: 6387788211455922884
+18:52:34 [Thread-0] INFO  -  [+] Client has sent a msg with Headers:token-id: 6387788211455922884
+|| Body: hola soy mati
+18:58:37 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:41)
+	at java.lang.Thread.run(Unknown Source)
+18:59:34 [main] INFO  -  RabbitMQ - Connection established
+18:59:34 [main] INFO  - Server started on 8090
+18:59:53 [main] INFO  - Client connected from 127.0.0.1:65134
+18:59:54 [main] INFO  - Nuevo TrheadServer: 3120806928911626305
+19:00:54 [main] INFO  -  RabbitMQ - Connection established
+19:00:54 [main] INFO  -  Node A started.
+19:00:54 [main] INFO  -  Node B started.
+19:00:54 [main] INFO  -  Node C started.
+19:01:18 [Thread-0] INFO  -  [+] Client has sent a msg with Headers--> 
+token-id: 3120806928911626305
+|| Body: hola soy mati
+19:04:54 [main] INFO  -  RabbitMQ - Connection established
+19:04:54 [main] INFO  - Server started on 8090
+19:05:12 [main] INFO  -  RabbitMQ - Connection established
+19:05:12 [main] INFO  -  Node A started.
+19:05:12 [main] INFO  -  Node B started.
+19:05:12 [main] INFO  -  Node C started.
+19:05:32 [main] INFO  -  RabbitMQ - Connection established
+19:05:32 [main] INFO  -  Node A started.
+19:05:32 [main] INFO  -  Node B started.
+19:05:32 [main] INFO  -  Node C started.
+19:06:20 [main] INFO  -  RabbitMQ - Connection established
+19:06:20 [main] INFO  -  Node A started.
+19:06:20 [main] INFO  -  Node B started.
+19:06:20 [main] INFO  -  Node C started.
+19:06:32 [main] INFO  - Client connected from 127.0.0.1:65194
+19:06:33 [main] INFO  - Nuevo TrheadServer: 5760505717527313710
+19:06:48 [Thread-0] INFO  -  [+] Client has sent a msg with Headers--> 
+token-id: 5760505717527313710
+|| Body: Hola soy mati
+19:06:48 [pool-1-thread-6] INFO  -  [+] Node received 'NodoA': 'Hola soy mati'
+19:06:48 [pool-1-thread-6] INFO  -  [+] Working...
+19:06:51 [pool-1-thread-6] INFO  -  [+] Node A Sent response!
+19:09:00 [main] INFO  - Client connected from 127.0.0.1:65207
+19:09:00 [main] INFO  - Nuevo TrheadServer: 5810754410055204059
+19:09:17 [Thread-1] INFO  -  [+] Client has sent a msg with Headers--> 
+token-id: 5810754410055204059
+|| Body: soy mati de nuvo bro
+19:16:08 [Thread-1] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:41)
+	at java.lang.Thread.run(Unknown Source)
+20:04:49 [main] INFO  -  RabbitMQ - Connection established
+20:04:49 [main] INFO  - Server started on 8090
+20:06:48 [main] INFO  -  RabbitMQ - Connection established
+20:06:48 [main] INFO  - NodoA Started
+20:07:02 [main] INFO  - Client connected from 127.0.0.1:49558
+20:07:02 [main] INFO  - Nuevo TrheadServer: 7217141072405205488
+20:07:16 [Thread-0] INFO  -  [+] Client has sent a msg with Headers--> 
+ ||token-id: 7217141072405205488
+|| Body: hola soy mati che
+20:07:16 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'hola soy mati che'
+20:07:16 [pool-1-thread-4] INFO  -  [+] Working...
+20:07:16 [pool-1-thread-4] ERROR - Consumer com.rabbitmq.client.impl.recovery.AutorecoveringChannel$2@1f491ed5 (amq.ctag-5-uzMF8h7ZfeheBtteZO-w) method handleDelivery for channel AMQChannel(amqp://admin@127.0.0.1:5672/,1) threw an exception for channel AMQChannel(amqp://admin@127.0.0.1:5672/,1)
+java.lang.NumberFormatException: For input string: "NodoA"
+	at java.lang.NumberFormatException.forInputString(Unknown Source)
+	at java.lang.Long.parseLong(Unknown Source)
+	at java.lang.Long.parseLong(Unknown Source)
+	at punto3.NodeMain.lambda$0(NodeMain.java:82)
+	at com.rabbitmq.client.impl.recovery.AutorecoveringChannel$2.handleDelivery(AutorecoveringChannel.java:585)
+	at com.rabbitmq.client.impl.ConsumerDispatcher$5.run(ConsumerDispatcher.java:149)
+	at com.rabbitmq.client.impl.ConsumerWorkService$WorkPoolRunnable.run(ConsumerWorkService.java:104)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.lang.Thread.run(Unknown Source)
+20:08:32 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+20:10:12 [main] INFO  -  RabbitMQ - Connection established
+20:10:12 [main] INFO  - Server started on 8090
+20:10:31 [main] INFO  -  RabbitMQ - Connection established
+20:10:31 [main] INFO  - NodoA Started
+20:10:39 [main] INFO  - Client connected from 127.0.0.1:49585
+20:10:39 [main] INFO  - Nuevo TrheadServer: 586637589562174871
+20:10:49 [Thread-0] INFO  -  [+] Client has sent a msg with Headers--> 
+ ||token-id: 586637589562174871
+|| Body: buenas soy mati
+20:10:49 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'buenas soy mati'
+20:10:49 [pool-1-thread-4] INFO  -  [+] Working...
+20:10:49 [pool-1-thread-4] INFO  -  [+] NodoA Sent response!
+20:12:33 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+20:13:00 [main] INFO  -  RabbitMQ - Connection established
+20:13:00 [main] INFO  - Server started on 8090
+20:15:02 [main] INFO  -  RabbitMQ - Connection established
+20:15:02 [main] INFO  - NodoA Started
+20:15:16 [main] INFO  - Client connected from 127.0.0.1:49651
+20:15:16 [main] INFO  - Nuevo TrheadServer: 2015445046070941655
+20:15:38 [Thread-0] INFO  -  [+] Client has sent a msg with Headers--> 
+ ||token-id: 2015445046070941655
+|| Body: como andan chee
+20:15:39 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'como andan chee'
+20:15:39 [pool-1-thread-4] INFO  -  [+] Working...
+20:15:39 [pool-1-thread-4] INFO  -  [+] NodoA Sent response with routing key 2015445046070941655
+20:23:21 [main] INFO  -  RabbitMQ - Connection established
+20:23:21 [main] INFO  - Server started on 8090
+20:23:52 [main] INFO  -  RabbitMQ - Connection established
+20:23:52 [main] INFO  - NodoA Started
+20:24:03 [main] INFO  - Client connected from 127.0.0.1:49797
+20:24:03 [main] INFO  - Nuevo TrheadServer: 4930668404300572352
+20:24:17 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 4930668404300572352
+|| Body: hola soy matias
+20:24:17 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'hola soy matias'
+20:24:17 [pool-1-thread-4] INFO  -  [+] Working...
+20:24:17 [pool-1-thread-4] INFO  -  [+] NodoA Sent response with routing key 4930668404300572352
+20:24:17 [pool-1-thread-4] INFO  -  [+] Msg sent. - '4930668404300572352':'{"header":{"token-id":"4930668404300572352"},"body":"RESULTADO RESPUESTA PARA \u0027hola soy matias\u0027"}'
+20:24:17 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+20:26:20 [main] INFO  -  RabbitMQ - Connection established
+20:26:20 [main] INFO  - Server started on 8090
+20:26:51 [main] INFO  -  RabbitMQ - Connection established
+20:26:51 [main] INFO  - NodoA Started
+20:27:00 [main] INFO  - Client connected from 127.0.0.1:49839
+20:27:01 [main] INFO  - Nuevo TrheadServer: 5930202420968454399
+20:27:18 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 5930202420968454399
+|| Body: Buenas camaradasss
+20:27:18 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'Buenas camaradasss'
+20:27:18 [pool-1-thread-4] INFO  -  [+] Working...
+20:27:18 [pool-1-thread-4] INFO  -  [+] NodoA Sent response with routing key 5930202420968454399
+20:27:18 [pool-1-thread-4] INFO  -  [+] Msg sent. - '5930202420968454399':'{"header":{"token-id":"5930202420968454399"},"body":"RESULTADO RESPUESTA PARA \u0027Buenas camaradasss\u0027"}'
+20:27:18 [Thread-0] INFO  - Error -> 
+java.io.EOFException: null
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+20:39:43 [main] INFO  -  RabbitMQ - Connection established
+20:39:43 [main] INFO  - Server started on 8090
+20:42:43 [main] INFO  -  RabbitMQ - Connection established
+20:42:43 [main] INFO  - NodoA Started
+20:44:36 [main] INFO  - Client connected from MATIASR-LENOVO:49997
+20:44:36 [main] INFO  - Nuevo TrheadServer: 2403626927549982702
+20:44:36 [Thread-0] INFO  - Error -> 
+java.io.StreamCorruptedException: invalid stream header: 47455420
+	at java.io.ObjectInputStream.readStreamHeader(Unknown Source)
+	at java.io.ObjectInputStream.<init>(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:39)
+	at java.lang.Thread.run(Unknown Source)
+20:47:08 [main] INFO  -  RabbitMQ - Connection established
+20:47:08 [main] INFO  - Server started on 8090
+20:47:23 [main] INFO  - Client connected from 127.0.0.1:50035
+20:47:24 [main] INFO  - Nuevo TrheadServer: 2192612647581563597
+20:47:43 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 2192612647581563597
+|| Body: holis amigitis
+20:47:43 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'holis amigitis'
+20:47:43 [pool-1-thread-4] INFO  -  [+] Working...
+20:47:43 [pool-1-thread-4] INFO  -  [+] NodoA Sent response with routing key 2192612647581563597
+20:47:43 [pool-1-thread-4] INFO  -  [+] Msg sent. - '2192612647581563597':'RESULTADO RESPUESTA PARA 'holis amigitis''
+20:47:43 [Thread-0] INFO  - Error -> 
+java.io.EOFException: null
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+23:02:39 [main] INFO  -  RabbitMQ - Connection established
+23:02:39 [main] INFO  - Server started on 8090
+23:03:04 [main] INFO  -  RabbitMQ - Connection established
+23:03:04 [main] INFO  - NodoA Started
+23:03:24 [main] INFO  - Client connected from 127.0.0.1:51128
+23:03:25 [main] INFO  - Nuevo TrheadServer: 3268913968983910757
+23:03:36 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 3268913968983910757
+|| Body: hacer suma
+23:03:36 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'hacer suma'
+23:03:36 [pool-1-thread-4] INFO  -  [+] Working...
+23:03:36 [Thread-0] INFO  -  [+] NodoA Sent response with routing key 3268913968983910757
+23:03:36 [pool-1-thread-4] INFO  -  [+] Msg sent. - '3268913968983910757':'RESULTADO RESPUESTA PARA 'hacer suma' ES>10'
+23:03:36 [Thread-0] INFO  - Error -> 
+java.io.EOFException: null
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:42)
+	at java.lang.Thread.run(Unknown Source)
+23:05:47 [main] INFO  -  RabbitMQ - Connection established
+23:05:47 [main] INFO  - Server started on 8090
+23:06:07 [main] INFO  -  RabbitMQ - Connection established
+23:06:07 [main] INFO  - NodoA Started
+23:06:24 [main] INFO  - Client connected from 127.0.0.1:51154
+23:06:24 [main] INFO  - Nuevo TrheadServer: 3328509725012374278
+23:06:39 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 3328509725012374278
+|| Body: suma
+23:06:39 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'suma'
+23:06:39 [pool-1-thread-4] INFO  -  [+] Working...
+23:06:39 [Thread-0] INFO  -  [+] NodoA Sent response with routing key 3328509725012374278
+23:06:39 [pool-1-thread-4] INFO  -  [+] Msg sent. - '3328509725012374278':'RESULTADO RESPUESTA PARA 'suma' ES>10'
+23:06:39 [Thread-0] INFO  - Error -> 
+java.io.EOFException: null
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:43)
+	at java.lang.Thread.run(Unknown Source)
+23:52:11 [main] INFO  -  RabbitMQ - Connection established
+23:52:11 [main] INFO  - Server started on 8090
+23:53:22 [main] INFO  -  RabbitMQ - Connection established
+23:53:22 [main] INFO  - NodoA Started
+23:55:19 [main] INFO  - Client connected from 127.0.0.1:51804
+23:55:19 [main] INFO  - Nuevo TrheadServer: 936107639098245229
+23:55:52 [Thread-0] INFO  - Error -> 
+java.net.SocketException: Connection reset
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.ObjectInputStream$PeekInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peek(Unknown Source)
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:43)
+	at java.lang.Thread.run(Unknown Source)
+23:56:39 [main] INFO  -  RabbitMQ - Connection established
+23:56:39 [main] INFO  - Server started on 8090
+23:56:50 [main] INFO  - Client connected from 127.0.0.1:51822
+23:56:50 [main] INFO  - Nuevo TrheadServer: 1291689821812966532
+23:57:07 [Thread-0] INFO  -  [+] Client has sent a msg --> 
+||token-id: 1291689821812966532
+|| Body: suma
+23:57:07 [pool-1-thread-4] INFO  -  [+] Node received 'NodoA': 'suma'
+23:57:07 [pool-1-thread-4] INFO  -  [+] Working...
+23:57:07 [Thread-0] INFO  -  [+] NodoA Sent response with routing key 1291689821812966532
+23:57:07 [pool-1-thread-4] INFO  -  [+] Msg sent. - '1291689821812966532':'12'
+23:57:07 [Thread-0] INFO  - Error -> 
+java.io.EOFException: null
+	at java.io.ObjectInputStream$BlockDataInputStream.peekByte(Unknown Source)
+	at java.io.ObjectInputStream.readObject0(Unknown Source)
+	at java.io.ObjectInputStream.readObject(Unknown Source)
+	at punto3.ThreadServer.run(ThreadServer.java:43)
+	at java.lang.Thread.run(Unknown Source)

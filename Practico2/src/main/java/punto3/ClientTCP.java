@@ -15,23 +15,25 @@ public class ClientTCP {
 	public ClientTCP (String ip, int port) {
 		try {
 			int numClient = (int)(Math.random() * 1000) + 1; // para diferenciar los diferentes mensajes impresos en el Server
-			String msj;
+			String llamada;
 			
 			Socket s = new Socket (ip, port);
 			System.out.println("-----Cliente "+numClient+" iniciado----");
 			ObjectOutputStream outputChannel = new ObjectOutputStream (s.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (s.getInputStream());
 
-			System.out.println("Ingrese un mensaje>");
-			Scanner scannerMSJ = new Scanner(System.in);
-			msj =  scannerMSJ.nextLine();
-			//msj= "Hola";  //Para tests rapidos (con un mensaje por defecto) descomentar esta linea; comentar las tres lineas anteriores.
+			//System.out.println("Ingrese un mensaje>");
+			//Scanner scannerMSJ = new Scanner(System.in);
+			//llamada =  scannerMSJ.nextLine();
+			llamada= "suma";  //Para tests rapidos (con un mensaje por defecto) descomentar esta linea; comentar las tres lineas anteriores.
 			
-			Message k = new Message(msj);
-			outputChannel.writeObject(k);
-			String response = (String) inputChannel.readObject();
+			Message funcion = new Message(llamada);
+			funcion.addParametro("num1", 5);
+			funcion.addParametro("num2", 7);
 			
-			System.out.println("El servidor ha respondido> "+response);
+			outputChannel.writeObject(funcion);
+			Message response = (Message) inputChannel.readObject();
+			System.out.println("El servidor ha respondido> "+response.getResultado());
 			s.close();
 			
 		} catch (UnknownHostException e) {
