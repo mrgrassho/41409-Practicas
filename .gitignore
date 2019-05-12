@@ -5,3 +5,4 @@ unlu2019/
 .project
 .settings
 **/.classpath
+**/*.log
