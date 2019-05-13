@@ -20,7 +20,7 @@ public class ThreadServer implements Runnable{
 	private String routingKey;
 	private Gson googleJson;
 	private Logger log;
-	private static final String EXCHANGE_NAME = "XCHNG-OUT";
+	private static String EXCHANGE_NAME;
 	
 	public ThreadServer(Socket client, Long routingKey, Channel queueChannel, String inputQueueName, String outputQueueName, Logger log) {
 		this.client = client;
@@ -30,6 +30,7 @@ public class ThreadServer implements Runnable{
 		this.outputQueueName = outputQueueName;
 		this.googleJson = new Gson();
 		this.log = log;
+		EXCHANGE_NAME = "XCHNG-"+String.valueOf(routingKey);
 	}
 
 	public void run() {
@@ -38,33 +39,37 @@ public class ThreadServer implements Runnable{
 			ObjectOutputStream outputChannel = new ObjectOutputStream (this.client.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (this.client.getInputStream());
 			queueChannel.exchangeDeclare(EXCHANGE_NAME, "direct");
-			while (true) {
-				this.log.info(" [+] pasa por leer inputChannel (Mensajes de clienteTCP)");
-				Message decodedMsg = (Message) inputChannel.readObject();
-				decodedMsg.addHeader("token-id", String.valueOf(routingKey));
+			// Bind Queue 
+			queueChannel.queueBind(this.outputQueueName, EXCHANGE_NAME, String.valueOf(routingKey));
+
 				
+			// Funcion que se ejecuta cada vez que hay un mensaje en la cola de salida disponible.
+			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+				Message messageResp = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
+				messageResp.delHeader("token-id");
+				outputChannel.writeObject(messageResp);
+				log.info(" [+] Msg sent. - '" + delivery.getEnvelope().getRoutingKey() + "':'" + messageResp.getResultado() + "'");
+			};
+			this.queueChannel.basicConsume(outputQueueName, true, deliverCallback, consumerTag -> {});
+			
+			// Thread que lee socket de cleinte
+			while(true) {
+				this.log.info(" [+] Read client Socket");
+				Message decodedMsg = (Message) inputChannel.readObject();
+				decodedMsg.setHeader("token-id", String.valueOf(routingKey));
+
 				this.log.info(" [+] Client has sent a msg --> \n||" + decodedMsg.getFullHeader()+"|| Servicio: "+ decodedMsg.getFunctionName());
 				String mString = googleJson.toJson(decodedMsg);
 				this.queueChannel.basicPublish("", this.inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes());
-				
-				// Funcion que se ejecuta cada vez que hay un mensaje en la cola de salida disponible.
-				DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-		            Message messageResp = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
-		            messageResp.delHeader("token-id");
-		            outputChannel.writeObject(messageResp);
-		            log.info(" [+] Msg sent. - '" + delivery.getEnvelope().getRoutingKey() + "':'" + messageResp.getResultado() + "'");
-				};
-				// Bind Queue 
-				queueChannel.queueBind(this.outputQueueName, EXCHANGE_NAME, this.routingKey);
-				
-				this.queueChannel.basicConsume(outputQueueName, true, deliverCallback, consumerTag -> {
-					// Unbind Queue
-					queueChannel.queueUnbind(this.outputQueueName, EXCHANGE_NAME, this.routingKey);
-				});
-			}
-			
+			}	
 		} catch (IOException e) {
 			log.info("Error -> ",e);
+			try {
+				queueChannel.queueUnbind(this.outputQueueName, EXCHANGE_NAME, String.valueOf(routingKey));
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		} catch (ClassNotFoundException e) {
 			log.info("Error -> ",e);
 		}

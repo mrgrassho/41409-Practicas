@@ -22,7 +22,7 @@ public class Node {
 		this.percentageLoad = 0;
 		this.nodeState = NodeState.IDLE;
 	}
-
+	
 	public int getMaxLoad() {
 		return maxLoad;
 	}
@@ -63,7 +63,7 @@ public class Node {
 		return nodeState;
 	}
 
-	private void setNodeState(NodeState nodeState) {
+	public void setNodeState(NodeState nodeState) {
 		this.nodeState = nodeState;
 	}
 
@@ -90,6 +90,17 @@ public class Node {
 	private void updatePercentageLoad() {
 		this.percentageLoad = getCurrentLoad()/getMaxLoad();
 	}
+	
+	public boolean hasService(String name){
+		boolean f = false;
+		for (Service s : services) {
+			if (s.getName() == name) {
+				f = true;
+				break;
+			}
+		}
+		return f;
+	}
 
 	
 	@Override
@@ -97,5 +108,13 @@ public class Node {
 		if(node instanceof Node)
 			return ((Node) node).getName().equals(this.getName());
 		return false;
+	}
+
+	public void increaseCurrentLoad() {
+		this.increaseCurrentLoad(1);
+	}
+
+	public void decreaseCurrentLoad() {
+		this.decreaseCurrentLoad(1);
 	}
 }

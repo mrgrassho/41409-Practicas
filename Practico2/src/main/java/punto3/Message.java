@@ -34,7 +34,7 @@ public class Message implements Serializable {
 		return this.header.get(key);
 	}
 	
-	public void addHeader(String key, String value) {
+	public void setHeader(String key, String value) {
 		this.header.put(key, value);
 	}
 	
