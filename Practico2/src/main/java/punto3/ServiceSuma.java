@@ -26,6 +26,12 @@ public class ServiceSuma implements Service {
 		for(Object o:lista) {
 			result+= (int)o;
 		}
+		try {
+			// Hacemos que la tarea tarde mas
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		return result;
 	}
 }

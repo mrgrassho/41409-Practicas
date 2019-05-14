@@ -99,7 +99,7 @@ public class Dispatcher {
 			//empieza con tres nodos activos, luego ira llamando a los otros bajo demanda
 			nodosActivos.add(new Node("NodoA", "localhost", 8899, 20));
 			nodosActivos.add(new Node("NodoB", "localhost", 8890, 20));
-			//nodosActivos.add(new Node("NodoC", "localhost", 8891, 20));
+			nodosActivos.add(new Node("NodoC", "localhost", 8891, 20));
 			for (Node node : nodosActivos) {
 				this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
 			}
@@ -192,7 +192,6 @@ public class Dispatcher {
 			log.info(" [+] Msg notification arrived!");
 			// Update Node Load 
 			n.decreaseCurrentLoad();
-			n.setNodeState(NodeState.DEAD);
 			json = googleJson.toJson(n);
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 		} else {
@@ -208,7 +207,7 @@ public class Dispatcher {
 			log.info(" [!] Msg notification NOT arrived - TIMEOUT REACHED!");
 			// Update Node Load 
 			n.decreaseCurrentLoad();
-			n.setNodeState(NodeState.IDLE);
+			n.setNodeState(NodeState.DEAD);
 			json = googleJson.toJson(n);
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
 			json = googleJson.toJson(message);
@@ -309,6 +308,10 @@ public class Dispatcher {
 			nodosActivos.set(nodosActivos.indexOf(previousNode), updateNode);
 			decreaseGlobalMaxLoad(previousNode.getMaxLoad());
 			increaseGlobalMaxLoad(updateNode.getMaxLoad());
+			if (updateNode.getNodeState() == NodeState.DEAD) {
+				nodosActivos.remove(previousNode);
+				this.queueChannel.queueDelete(previousNode.getName());
+			}
 		} else {
 			this.queueChannel.queueDeclare(updateNode.getName(), true, false, false, null);
 			nodosActivos.add(updateNode);
