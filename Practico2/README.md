@@ -1,5 +1,5 @@
-
-### Punto3 - Balanceador de Carga
+﻿
+### Punto3 - Balanceador de Carga:
 
 Se diseño la siguiente arquitectura de colas:
 
