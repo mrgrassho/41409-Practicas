@@ -44,7 +44,7 @@ public class Dispatcher {
 	private Node nodoActual;
 	private ArrayList<Node> nodosActivos;
 	private static final String EXCHANGE_OUTPUT = "XCHNG-OUT";
-	private static final String EXCHANGE_NOTIFY = "XCHNG-NOTIFY";
+	private static final String EXCHANGE_NOTIFY = "XCHNG-OUT";
 	private static final String EXCHANGE_GLOBAL_LOAD = "XCHNG-GLOBAL_LOAD";
 	// 80 trys in a interval of 125ms => 10 seconds per node
 	private static final int RETRY_SLEEP_TIME = 125;
@@ -189,10 +189,11 @@ public class Dispatcher {
 		String nodeName = message.getHeader("to-node");
 		Node n = findNodeByName(nodeName);
 		if (flag) { //[node finished his task]
-			log.info(" [+] Msg notification arrived!");
+			log.info(" [+] Msg notification arrived from ["+ nodeName + "]!");
 			// Update Node Load 
 			n.decreaseCurrentLoad();
-			json = googleJson.toJson(n);
+			log.info(" [+] currentLoad ["+ nodeName + "]: " + n.getCurrentLoad());
+			json = googleJson.toJson(n); 
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 		} else {
 			
@@ -204,7 +205,7 @@ public class Dispatcher {
 			}
 			
 			// Re send the message to inputQueue
-			log.info(" [!] Msg notification NOT arrived - TIMEOUT REACHED!");
+			log.info(" [!] Msg notification NOT arrived  from ["+ nodeName + "] - TIMEOUT REACHED!");
 			// Update Node Load 
 			n.decreaseCurrentLoad();
 			n.setNodeState(NodeState.DEAD);
@@ -215,9 +216,11 @@ public class Dispatcher {
 		}
 		// Update Total Load		
 		decreaseGlobalCurrentLoad();
+		log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad);
 		this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
 	};
 
+	
 	private DeliverCallback msgDispatch = (consumerTag, delivery) -> {
 		String json;
 		log.info(" [+] Dispatcher received msg from " + delivery.getEnvelope().getRoutingKey());
@@ -234,9 +237,11 @@ public class Dispatcher {
 			// Update Node Load 
 			n.increaseCurrentLoad();
 			json = googleJson.toJson(n);
+			log.info(" [+] currentLoad ["+ n.getName() + "]: " + n.getCurrentLoad());
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
 			// Update Total Load		
 			increaseGlobalCurrentLoad();
+			log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad);
 			// Send Msg to InProcessQueue
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", inprocessQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
@@ -355,10 +360,11 @@ public class Dispatcher {
 		this.globalMaxLoad--;
 	}
 	
+	
 	public void startServer() {
 		log.info(" Dispatcher Started");
 		try {
-			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "fanout");
+			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "direct");
 			queueChannel.queueBind(this.notificationQueueName, EXCHANGE_OUTPUT, "");
 			// Init RabbitMQ Thread which listens to InputQueue 
 			this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});

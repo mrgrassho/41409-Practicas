@@ -44,14 +44,14 @@ public class ThreadNode implements Runnable {
 			array.add(this.task.parametros.get("num1"));
 			array.add(this.task.parametros.get("num2"));
 			this.task.setResultado((int) s.execute(array));
+			log.info("["+ this.node.getName()+ "] RESULTADO TAREA: "+ this.task.getResultado());
 			//-------------
 			
 			Message res = this.task;
 			// Envio resultado a outputQueue
-			String mString =  googleJson.toJson(res); 
+			String mString =  googleJson.toJson(res); 	
 			queueChannel.basicPublish(EXCHANGE_OUTPUT, this.task.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
-			log.info(" [+] "+ this.node.getName()+ "> RESULTADO TAREA: "+ this.task.getResultado());
-			log.info(" [+] "+ this.node.getName()+ "> Sent response with routing key "+ this.task.getHeader("token-id"));
+			log.info("["+ this.node.getName()+ "] Sent response "+ googleJson.toJson(res).toString());
 			
 		} catch (IOException e) {
 			e.printStackTrace();

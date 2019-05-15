@@ -59,7 +59,7 @@ public class Message implements Serializable {
 	}
 	
 	public void setResultado(int result) {
-		this.resultado = result;
+		this.resultado = result; 
 	}
 	
 }

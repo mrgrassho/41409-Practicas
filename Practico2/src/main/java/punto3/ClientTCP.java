@@ -8,9 +8,12 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
+
+import com.google.gson.Gson;
 
 public class ClientTCP implements Runnable {
 	Socket s;
@@ -21,11 +24,10 @@ public class ClientTCP implements Runnable {
 		try {
 			this.s = new Socket (ip, port);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.log = log;
-		this.numClient = (int)(Math.random() * 1000) + 1; 	
+		this.numClient = (int)(Math.random() * 10000) + 1; 	
 	}
 	
 	@Override
@@ -37,12 +39,15 @@ public class ClientTCP implements Runnable {
 			// Parametrizar -->
 			String llamada = "suma";  
 			Message funcion = new Message(llamada);
-			funcion.addParametro("num1", 5);
-			funcion.addParametro("num2", 7);
-			
+			funcion.addParametro("num1", (int) (Math.random() * 10));
+			funcion.addParametro("num2", (int) (Math.random() * 10));
+			funcion.setHeader("client",String.valueOf(numClient));
+			//write to server 
 			outputChannel.writeObject(funcion);
+			log.info("["+numClient+"] Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
+			//read 
 			Message response = (Message) inputChannel.readObject();
-			log.info("El servidor ha respondido> "+response.getResultado());
+			log.info("["+numClient+"] El servidor ha respondido> "+response.getResultado());
 			s.close();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();

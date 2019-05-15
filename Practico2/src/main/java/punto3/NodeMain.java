@@ -32,7 +32,7 @@ public class NodeMain {
 	private Channel queueChannel;
 	private String outputQueueName;
 	private String activesQueueName;
-	private String myProcessQueueName;
+	private String myNodeQueueName;
 	
 	private String ipRabbitMQ;
 	private Node node;
@@ -46,7 +46,7 @@ public class NodeMain {
 		this.password = "admin";
 		this.activesQueueName = "activeQueue";
 		this.outputQueueName = "outputQueue";
-		this.myProcessQueueName = this.node.getName();
+		this.myNodeQueueName = this.node.getName();
 		googleJson = new Gson();
 		this.configureConnectionToRabbit();
 		log.info(" RabbitMQ - Connection established");
@@ -62,7 +62,7 @@ public class NodeMain {
 			this.queueChannel = this.queueConnection.createChannel();
 			this.queueChannel.queueDeclare(this.outputQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.activesQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.myProcessQueueName, true, false, false, null);
+			this.queueChannel.queueDeclare(this.myNodeQueueName, true, false, false, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -76,16 +76,16 @@ public class NodeMain {
 			Random r = new Random();
 			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 				Message message = googleJson.fromJson(new String(delivery.getBody(), "UTF-8"), Message.class);
-				log.info(" [+] Node received '" + delivery.getEnvelope().getRoutingKey() + "': '" + message.getFunctionName() + "'");
+				log.info("["+this.node.getName()+"] " + delivery.getEnvelope().getRoutingKey() + " received: " + googleJson.toJson(message));
 				//Asigna Tarea a Thread
-				log.info(" [+] Working...");
+				log.info("["+this.node.getName()+"] " + "Working...");
 				
 				//asigno la tarea a un thread
 				ThreadNode tn = new ThreadNode(this.node,Long.parseLong(message.getHeader("token-id")),message, queueChannel,this.activesQueueName,outputQueueName,log);
 				Thread nodeThread = new Thread(tn);
 				nodeThread.start();
 			};
-			queueChannel.basicConsume(this.myProcessQueueName, true, deliverCallback, consumerTag -> {});
+			queueChannel.basicConsume(this.myNodeQueueName, true, deliverCallback, consumerTag -> {});
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -97,21 +97,22 @@ public class NodeMain {
 		String packetName = ServerMain.class.getSimpleName().toString()+"-"+thread;
 		System.setProperty("log.name",packetName);
 		
-		NodeMain node1 = new NodeMain(new Node("NodoA", "localhost", 8071,10), "localhost");
 		
-		//CREO LOS DIFERENTES SERVICIOS QUE VA A TENER CADA UNO (AGREGAR RESTA, MULTIPLICACION, MOD, etc 
+		//CREO LOS DIFERENTES SERVICIOS QUE VA A TENER CADA UNO (AGREGAR RESTA, MULTIPLICACION, MOD, etc )
 		Service suma = (Service) new ServiceSuma(8071,"suma"); // DUDA: cuando se le pide el puerto al servicio?
+		
+		NodeMain node1 = new NodeMain(new Node("NodoA", "localhost", 8071,10), "localhost");
 		node1.node.addService(suma);
 		node1.startNode();
 		
 		
-		//NodeMain node2 = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
-		//node2.node.addService( new ServiceSuma(8072,"suma") );
-		//node2.startNode();
+		NodeMain node2 = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
+		node2.node.addService( new ServiceSuma(8072,"suma") );
+		node2.startNode();
 		
-		NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
-		node3.node.addService( new ServiceSuma(8073,"suma") );
-		node3.startNode();
+		//NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
+		//node3.node.addService( new ServiceSuma(8073,"suma") );
+		//node3.startNode();
 		
 	}
 
