@@ -12,12 +12,12 @@ public class Message implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private Map<String, String> header;
 	private String functionName;
-	public Map<String, Integer> parametros;
-	private int resultado;
+	public Map<String, Object> parametros;
+	private Object resultado;
 	
 	public Message(String functionName) {
 		super();
-		this.parametros = new HashMap<String,Integer>();
+		this.parametros = new HashMap<String,Object>();
 		this.functionName = functionName;
 		this.header = new HashMap<String,String>();
 	}
@@ -46,7 +46,7 @@ public class Message implements Serializable {
 		return this.functionName;
 	}
 	
-	public void addParametro(String key, Integer value) {
+	public void addParametro(String key, Object value) {
 		this.parametros.put(key, value);
 	}
 	
@@ -54,12 +54,12 @@ public class Message implements Serializable {
 		this.parametros.remove(key);
 	}
 	
-	public int getResultado() {
+	public Object getResultado() {
 		return this.resultado;
 	}
 	
-	public void setResultado(int result) {
-		this.resultado = result;
+	public void setResultado(Object result) {
+		this.resultado = result; 
 	}
 	
 }

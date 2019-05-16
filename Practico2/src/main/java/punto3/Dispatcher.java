@@ -45,7 +45,7 @@ public class Dispatcher {
 	private Node nodoActual;
 	private ArrayList<Node> nodosActivos;
 	private static final String EXCHANGE_OUTPUT = "XCHNG-OUT";
-	private static final String EXCHANGE_NOTIFY = "XCHNG-NOTIFY";
+	private static final String EXCHANGE_NOTIFY = "XCHNG-OUT";
 	private static final String EXCHANGE_GLOBAL_LOAD = "XCHNG-GLOBAL_LOAD";
 	// 80 trys in a interval of 125ms => 10 seconds per node
 	private static final int RETRY_SLEEP_TIME = 125;
@@ -158,7 +158,7 @@ public class Dispatcher {
 			else  n = this.nodoActual;
 			if (len == c) throw new Exception("Servicio no disponible.");
 			c++;
-		} while (n.getNodeState() == NodeState.CRITICAL && n.hasService(name));
+		} while (n.getNodeState() == NodeState.CRITICAL && n.hasService(name) );
 		return n;
 	}
 
@@ -170,16 +170,18 @@ public class Dispatcher {
 				break;
 			}
 		}
+		if (n==null) {log.info(" [+] Dispatcher NOT found ["+ name + "] in nodosActivos");}
 		return n;
 	}
 
-	private DeliverCallback msgProcess = (consumerTag, delivery) -> {
+	private DeliverCallback msgProcess = (consumerTag, delivery) -> { //when received message from InProcessQueue
 		int MAX_RETRY = nodosActivos.size();
 		String json;
 		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
-		this.queueChannel.exchangeDeclare(EXCHANGE_NOTIFY, BuiltinExchangeType.DIRECT);
-		this.queueChannel.queueBind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
-		log.info(" [+] Dispatcher waiting for outputQueue notify");
+		//this.queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, BuiltinExchangeType.DIRECT);
+		//this.queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));
+		//log.info(" [+] Dispatcher declared new bind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
+		log.info(" [msgProcess] waiting for notification...");
 		int retriesInNode = 0;
 		boolean flag = false;
 		while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) {
@@ -199,9 +201,10 @@ public class Dispatcher {
 		String nodeName = message.getHeader("to-node");
 		Node n = findNodeByName(nodeName);
 		if (flag) { //[node finished his task]
-			log.info(" [+] Msg from " + nodeName + " arrived!");
+			log.info(" [msgProcess] Msg notification arrived from ["+ nodeName + "]!");
 			// Update Node Load
 			n.decreaseCurrentLoad();
+			log.info(" [+] currentLoad ["+ nodeName + "]: " + n.getCurrentLoad());
 			json = googleJson.toJson(n);
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 		} else {
@@ -225,12 +228,16 @@ public class Dispatcher {
 		}
 		// Update Total Load
 		decreaseGlobalCurrentLoad();
+		log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad);
 		this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
+		log.info(" [+] Dispatcher unbind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
+
 	};
+
 
 	private DeliverCallback msgDispatch = (consumerTag, delivery) -> {
 		String json;
-		log.info(" [+] Dispatcher received msg from " + delivery.getEnvelope().getRoutingKey());
+		log.info(" [msgDispatch] received msg from " + delivery.getEnvelope().getRoutingKey());
 		log.info(new String(delivery.getBody(), "UTF-8"));
 		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);//message from ThreadServer
 		try {
@@ -240,16 +247,22 @@ public class Dispatcher {
 			message.setHeader("to-node", n.getName());
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", n.getName(), MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
-			log.info(" [+] Dispatcher sent msg to " +  n.getName());
+			log.info(" [msgDispatch] sent msg to " +  n.getName());
 			// Update Node Load
 			n.increaseCurrentLoad();
 			json = googleJson.toJson(n);
+			log.info(" [+] currentLoad ["+ n.getName() + "]: " + n.getCurrentLoad());
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
 			// Update Total Load
 			increaseGlobalCurrentLoad();
+			log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad);
 			// Send Msg to InProcessQueue
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", inprocessQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
+			log.info(" [msgDispatch] sent msg to inProcessQueue");
+			this.queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, BuiltinExchangeType.DIRECT);
+			this.queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));
+			log.info(" [msgDispatch] Dispatcher declared new bind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
 
 		}  catch (Exception e) {
 			log.info(" [-] Service Not found.");
@@ -410,7 +423,7 @@ public class Dispatcher {
 	public void startServer() {
 		log.info(" Dispatcher Started");
 		try {
-			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "fanout");
+			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "direct");
 			queueChannel.queueBind(this.notificationQueueName, EXCHANGE_OUTPUT, "");
 			// Init RabbitMQ Thread which listens to InputQueue
 			this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});
