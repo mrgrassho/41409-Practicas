@@ -217,7 +217,7 @@ public class Dispatcher {
 			}
 
 			// Re send the message to inputQueue
-			log.info(" [!] Msg notification from "+nodeName+"NOT arrived - TIMEOUT REACHED!");
+			log.info(" [!] Msg notification NOT arrived  from ["+ nodeName + "] - TIMEOUT REACHED!");
 			// Update Node Load
 			n.decreaseCurrentLoad();
 			n.setNodeState(NodeState.DEAD);
@@ -419,6 +419,7 @@ public class Dispatcher {
 	private void decreaseGlobalMaxLoad() {
 		this.globalMaxLoad--;
 	}
+
 
 	public void startServer() {
 		log.info(" Dispatcher Started");

@@ -111,11 +111,12 @@ public class NodeMain {
 		nodeA.node.addService(new ServiceSuma(8071,"suma"));
 		nodeA.node.addService(new ServiceSuma(8072,"resta"));
 		nodeA.startNode();
-
+		
 
 		NodeMain nodeB = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
 		nodeB.node.addService( new ServiceSuma(8073,"suma") );
 		nodeB.startNode();
+
 		//NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
 		//node3.node.addService( new ServiceSuma(8073,"suma") );
 		//node3.startNode();
