@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.TimeoutException;
 
@@ -48,19 +49,28 @@ public class Dispatcher {
 	private static final String EXCHANGE_GLOBAL_LOAD = "XCHNG-GLOBAL_LOAD";
 	// 80 trys in a interval of 125ms => 10 seconds per node
 	private static final int RETRY_SLEEP_TIME = 125;
-	private static final int MAX_RETRIES_IN_NODE = 80; 
+	private static final int MAX_RETRIES_IN_NODE = 80;
 	public Gson googleJson = new Gson();
 	public GetResponse response;
 	private GlobalState globalState;
 	private int globalMaxLoad;
 	private int globalCurrentLoad;
 
+	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>( Arrays.asList(
+			"NodoA", "NodoB", "NodoC", "NodoD", "NodoE", "NodoF", "NodoG", "NodoH",
+			"NodoI", "NodoJ", "NodoK", "NodoL", "NodoM", "NodoN", "NodoO", "NodoP",
+			"NodoQ", "NodoR", "NodoS", "NodoT", "NodoU", "NodoV", "NodoW", "NodoX",
+			"NodoY", "NodoZ"
+	));
+
+	private EstadoCreador estadoCreador = EstadoCreador.IDLE;
+
 	public Dispatcher(String ip, int port) {
 		this.ip = ip;
 		this.port = port;
 		this.username = "admin";
 		this.password = "admin";
-		this.globalState = GlobalState.GLOBAL_IDLE; 
+		this.globalState = GlobalState.GLOBAL_IDLE;
 		this.globalMaxLoad = 0;
 		this.globalCurrentLoad = 0;
 		this.configureConnectionToRabbit();
@@ -91,7 +101,7 @@ public class Dispatcher {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/*CARGA NODOS: Los que empezaran como activos, con una cola de proceso para cada nodo, la cual se llama igual que el nodo*/
 	private void loadNodeConfiguration() {
 		try {
@@ -137,7 +147,7 @@ public class Dispatcher {
 		i = (i + 1) % nodosActivos.size();
 		return nodosActivos.get(i);
 	}
-	
+
 	/*Devuelve el siguiente nodo en condiciones de recibir la proxima tarea*/
 	private Node getNextNodeSafe(String name) throws Exception {
 		Node n;
@@ -151,7 +161,7 @@ public class Dispatcher {
 		} while (n.getNodeState() == NodeState.CRITICAL && n.hasService(name));
 		return n;
 	}
-	   
+
 	private Node findNodeByName(String name) {
 		Node n = null;
 		for (Node node : nodosActivos) {
@@ -172,7 +182,7 @@ public class Dispatcher {
 		log.info(" [+] Dispatcher waiting for outputQueue notify");
 		int retriesInNode = 0;
 		boolean flag = false;
-		while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) { 
+		while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) {
 			try {
 				if (this.queueChannel.messageCount(notificationQueueName) >= 1) {
 					this.queueChannel.basicGet(notificationQueueName, true);
@@ -189,23 +199,23 @@ public class Dispatcher {
 		String nodeName = message.getHeader("to-node");
 		Node n = findNodeByName(nodeName);
 		if (flag) { //[node finished his task]
-			log.info(" [+] Msg notification arrived!");
-			// Update Node Load 
+			log.info(" [+] Msg from " + nodeName + " arrived!");
+			// Update Node Load
 			n.decreaseCurrentLoad();
 			json = googleJson.toJson(n);
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 		} else {
-			
+
 			if (null != message.getHeader("redir-qty")) {
 				int redir = Integer.parseInt(message.getHeader("redir-qty"));
 				message.setHeader("redir-qty", String.valueOf(redir+1));
 			} else {
 				message.setHeader("redir-qty", "1");
 			}
-			
+
 			// Re send the message to inputQueue
-			log.info(" [!] Msg notification NOT arrived - TIMEOUT REACHED!");
-			// Update Node Load 
+			log.info(" [!] Msg notification from "+nodeName+"NOT arrived - TIMEOUT REACHED!");
+			// Update Node Load
 			n.decreaseCurrentLoad();
 			n.setNodeState(NodeState.DEAD);
 			json = googleJson.toJson(n);
@@ -213,7 +223,7 @@ public class Dispatcher {
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", inputQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
 		}
-		// Update Total Load		
+		// Update Total Load
 		decreaseGlobalCurrentLoad();
 		this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
 	};
@@ -231,11 +241,11 @@ public class Dispatcher {
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", n.getName(), MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 			log.info(" [+] Dispatcher sent msg to " +  n.getName());
-			// Update Node Load 
+			// Update Node Load
 			n.increaseCurrentLoad();
 			json = googleJson.toJson(n);
 			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
-			// Update Total Load		
+			// Update Total Load
 			increaseGlobalCurrentLoad();
 			// Send Msg to InProcessQueue
 			json = googleJson.toJson(message);
@@ -246,41 +256,82 @@ public class Dispatcher {
 			String xString = googleJson.toJson(new Message("Service Not found."));
 			queueChannel.basicPublish("", message.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, xString.getBytes("UTF-8"));
 		}
-	};	
-	
+	};
+
+	private void createNodos(int k) throws UnsupportedEncodingException, IOException {
+		String json = "{}";
+		String name = nodoActual.getName();
+		log.info(nodosActivos.get(nodosActivos.size()-1).getName());
+		int i = DICCIONARIO.indexOf(nodosActivos.get(nodosActivos.size()-1).getName());
+		for (int j = i+1; j < k+1+i; j++) {
+			log.info("Creating Node -> " + DICCIONARIO.get(j));
+			NodeMain node3 = new NodeMain(new Node(DICCIONARIO.get(j), "localhost", 8073,10), "localhost");
+			node3.getNode().addService( new ServiceSuma(8073,"suma") );
+			node3.startNode();
+			Node n = node3.getNode();
+			json = googleJson.toJson(n);
+			queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
+			this.queueChannel.queueDeclare(n.getName(), true, false, false, null);
+		}
+	}
+
+	private void removeNodos(int k) throws UnsupportedEncodingException, IOException {
+		String json = "{}";
+		String name = nodoActual.getName();
+		int i = 0;
+		for (int j = i; j < k; j++) {
+			if (nodosActivos.get(j).getNodeState() == NodeState.IDLE) {
+				Node node3 = nodosActivos.get(j);
+				// Al enviarlo en estado DEAD, el thread activesNode lo borra.
+				node3.setNodeState(NodeState.DEAD);
+				json = googleJson.toJson(node3);
+				queueChannel.basicPublish("", activesQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
+			}
+		}
+	}
 
 	/*
-	 * Checks Node's health and creates/remove nodes when necessary.  
+	 * Checks Node's health and creates/remove nodes when necessary.
 	 * */
 	private void healthChecker() throws IOException {
 		DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 			GlobalState gs = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), GlobalState.class);
+			log.info(" Global State -> " + String.valueOf(gs));
+			if (estadoCreador == EstadoCreador.IDLE){
+			estadoCreador = EstadoCreador.WORKING;
 			switch (gs) {
 				case GLOBAL_CRITICAL:
 					// Calculate how many Nodes need to be created to be in GLOBAL_ALERT
 					// Definir nuevos Nodos
 					// Agregar queueDeclares
-	
+
+					int k = nodosActivos.size()/2;
+					createNodos(k);
 					break;
 				case GLOBAL_ALERT:
 					// Calculate how many Nodes need to be created to be in GLOBAL_NORMAL
 					// Definir nuevos Nodos
 					// Agregar queueDeclares
-	
+					int q = nodosActivos.size()/4;
+					createNodos(q);
 					break;
 				case GLOBAL_IDLE:
 					// Calculate how many Nodes need to be removed to be in GLOBAL_NORMAL
 					// Remover Nodos aleatoriamente
 					// --> queueDelete
-	
+					int h = nodosActivos.size()/2;
+					removeNodos(h);
 					break;
 				default:
 					break;
 			}
+			estadoCreador = EstadoCreador.IDLE;
+		}
+
 		};
 		queueChannel.basicConsume(GlobalStateQueueName, false, deliverCallback, consumerTag -> { });
 	}
-	
+
 	private void updateGlobal() throws UnsupportedEncodingException, IOException{
 		// if GlobalCurrentLoad represents less than a 20% of GlobalLoad --> GlobalState is IDLE
 		if (globalCurrentLoad  < ((int) globalMaxLoad * 0.2)) {
@@ -301,7 +352,7 @@ public class Dispatcher {
 	}
 
 	private DeliverCallback ActiveNodeDeliverCallback = (consumerTag, delivery) -> {
-		
+
 		Node updateNode = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Node.class);
 		Node previousNode = findNodeByName(updateNode.getName());
 		if (previousNode.getName().equals(updateNode.getName())) {
@@ -317,52 +368,53 @@ public class Dispatcher {
 			nodosActivos.add(updateNode);
 			increaseGlobalMaxLoad(updateNode.getMaxLoad());
 		}
+		updateGlobal();
 	};
-	
+
 	public GlobalState getGlobalState() {
 		return this.globalState;
 	}
-	
+
 	private void increaseGlobalCurrentLoad(int currentLoad) {
 		this.globalCurrentLoad += currentLoad;
 	}
-	
+
 	private void increaseGlobalCurrentLoad() {
 		this.globalCurrentLoad ++;
 	}
-	
+
 	private void decreaseGlobalCurrentLoad(int currentLoad) {
-		this.globalCurrentLoad -= currentLoad;	
+		this.globalCurrentLoad -= currentLoad;
 	}
-	
+
 	private void decreaseGlobalCurrentLoad() {
-		this.globalCurrentLoad--;	
+		this.globalCurrentLoad--;
 	}
-	
+
 	private void increaseGlobalMaxLoad(int maxLoad) {
 		this.globalMaxLoad += maxLoad;
 	}
-	
+
 	private void increaseGlobalMaxLoad() {
 		this.globalMaxLoad++;
 	}
-	
+
 	private void decreaseGlobalMaxLoad(int maxLoad) {
 		this.globalMaxLoad -= maxLoad;
 	}
-	
+
 	private void decreaseGlobalMaxLoad() {
 		this.globalMaxLoad--;
 	}
-	
+
 	public void startServer() {
 		log.info(" Dispatcher Started");
 		try {
 			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "fanout");
 			queueChannel.queueBind(this.notificationQueueName, EXCHANGE_OUTPUT, "");
-			// Init RabbitMQ Thread which listens to InputQueue 
+			// Init RabbitMQ Thread which listens to InputQueue
 			this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});
-			// Init RabbitMQ Thread which make sure that the message is attend it. 
+			// Init RabbitMQ Thread which make sure that the message is attend it.
 			this.queueChannel.basicConsume(inprocessQueueName, true, msgProcess, consumerTag -> {});
 			// Init RabbitMQ Thread that listens and updates to ActiveQueue
 			this.healthChecker();
@@ -372,7 +424,7 @@ public class Dispatcher {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		int thread = (int) Thread.currentThread().getId();
 		String packetName = Dispatcher.class.getSimpleName().toString()+"-"+thread;

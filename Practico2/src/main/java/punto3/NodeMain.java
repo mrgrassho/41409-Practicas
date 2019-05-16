@@ -39,6 +39,10 @@ public class NodeMain {
 	private Gson googleJson;
 	private int max_tasks;
 	
+	public Node getNode() {
+		return this.node;
+	}
+	
 	public NodeMain(Node node, String ipRabbitMQ) {
 		this.node = node;
 		this.ipRabbitMQ = ipRabbitMQ;
@@ -105,9 +109,9 @@ public class NodeMain {
 		node1.startNode();
 		
 		
-		//NodeMain node2 = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
-		//node2.node.addService( new ServiceSuma(8072,"suma") );
-		//node2.startNode();
+		NodeMain node2 = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
+		node2.node.addService( new ServiceSuma(8072,"suma") );
+		node2.startNode();
 		
 		NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
 		node3.node.addService( new ServiceSuma(8073,"suma") );
