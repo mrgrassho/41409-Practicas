@@ -92,17 +92,31 @@ public class Node {
 	}
 	
 	public boolean hasService(String name){
-		boolean f = false;
+		boolean find = false;
 		for (Service s : services) {
 			if (s.getName() == name) {
-				f = true;
+				find = true;
 				break;
 			}
 		}
-		return f;
+		return find;
 	}
 
-	
+	public Service findServiceByName(String name) {
+		Service find = null;
+		int i = 0;
+		boolean salir = false;
+		while (!salir && i<this.getServices().size()){
+			if (this.services.get(i).getName().equals(name)) {
+					find = this.services.get(i);
+					salir = true;
+			}
+			i++;
+		}
+		return find;
+	}
+
+
 	@Override
 	public boolean equals(Object node) {
 		if(node instanceof Node)

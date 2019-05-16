@@ -37,7 +37,7 @@ public class ClientTCP implements Runnable {
 			ObjectOutputStream outputChannel = new ObjectOutputStream (s.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (s.getInputStream());
 			// Parametrizar -->
-			String llamada = "suma";  
+			String llamada = "resta";  
 			Message funcion = new Message(llamada);
 			funcion.addParametro("num1", (int) (Math.random() * 10));
 			funcion.addParametro("num2", (int) (Math.random() * 10));

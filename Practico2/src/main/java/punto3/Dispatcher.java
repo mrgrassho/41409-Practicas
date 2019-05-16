@@ -148,7 +148,7 @@ public class Dispatcher {
 			else  n = this.nodoActual;
 			if (len == c) throw new Exception("Servicio no disponible.");
 			c++;
-		} while (n.getNodeState() == NodeState.CRITICAL && n.hasService(name));
+		} while (n.getNodeState() == NodeState.CRITICAL && n.hasService(name) );
 		return n;
 	}
 	   
@@ -160,16 +160,18 @@ public class Dispatcher {
 				break;
 			}
 		}
+		if (n==null) {log.info(" [+] Dispatcher NOT found ["+ name + "] in nodosActivos");}
 		return n;
 	}
 
-	private DeliverCallback msgProcess = (consumerTag, delivery) -> {
+	private DeliverCallback msgProcess = (consumerTag, delivery) -> { //when received message from InProcessQueue
 		int MAX_RETRY = nodosActivos.size();
 		String json;
 		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
-		this.queueChannel.exchangeDeclare(EXCHANGE_NOTIFY, BuiltinExchangeType.DIRECT);
-		this.queueChannel.queueBind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
-		log.info(" [+] Dispatcher waiting for outputQueue notify");
+		//this.queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, BuiltinExchangeType.DIRECT);
+		//this.queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));
+		//log.info(" [+] Dispatcher declared new bind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
+		log.info(" [msgProcess] waiting for notification...");
 		int retriesInNode = 0;
 		boolean flag = false;
 		while (retriesInNode < MAX_RETRIES_IN_NODE && !flag) { 
@@ -189,7 +191,7 @@ public class Dispatcher {
 		String nodeName = message.getHeader("to-node");
 		Node n = findNodeByName(nodeName);
 		if (flag) { //[node finished his task]
-			log.info(" [+] Msg notification arrived from ["+ nodeName + "]!");
+			log.info(" [msgProcess] Msg notification arrived from ["+ nodeName + "]!");
 			// Update Node Load 
 			n.decreaseCurrentLoad();
 			log.info(" [+] currentLoad ["+ nodeName + "]: " + n.getCurrentLoad());
@@ -218,12 +220,14 @@ public class Dispatcher {
 		decreaseGlobalCurrentLoad();
 		log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad);
 		this.queueChannel.queueUnbind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
+		log.info(" [+] Dispatcher unbind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
+		
 	};
 
 	
 	private DeliverCallback msgDispatch = (consumerTag, delivery) -> {
 		String json;
-		log.info(" [+] Dispatcher received msg from " + delivery.getEnvelope().getRoutingKey());
+		log.info(" [msgDispatch] received msg from " + delivery.getEnvelope().getRoutingKey());
 		log.info(new String(delivery.getBody(), "UTF-8"));
 		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);//message from ThreadServer
 		try {
@@ -233,7 +237,7 @@ public class Dispatcher {
 			message.setHeader("to-node", n.getName());
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", n.getName(), MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
-			log.info(" [+] Dispatcher sent msg to " +  n.getName());
+			log.info(" [msgDispatch] sent msg to " +  n.getName());
 			// Update Node Load 
 			n.increaseCurrentLoad();
 			json = googleJson.toJson(n);
@@ -245,7 +249,11 @@ public class Dispatcher {
 			// Send Msg to InProcessQueue
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", inprocessQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
-
+			log.info(" [msgDispatch] sent msg to inProcessQueue");
+			this.queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, BuiltinExchangeType.DIRECT);
+			this.queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, message.getHeader("token-id"));
+			log.info(" [msgDispatch] Dispatcher declared new bind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
+			
 		}  catch (Exception e) {
 			log.info(" [-] Service Not found.");
 			String xString = googleJson.toJson(new Message("Service Not found."));

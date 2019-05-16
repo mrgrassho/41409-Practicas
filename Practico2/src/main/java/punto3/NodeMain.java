@@ -33,6 +33,7 @@ public class NodeMain {
 	private String outputQueueName;
 	private String activesQueueName;
 	private String myNodeQueueName;
+	private String notificationQueueName;
 	
 	private String ipRabbitMQ;
 	private Node node;
@@ -46,6 +47,7 @@ public class NodeMain {
 		this.password = "admin";
 		this.activesQueueName = "activeQueue";
 		this.outputQueueName = "outputQueue";
+		this.notificationQueueName = "notificationQueue";
 		this.myNodeQueueName = this.node.getName();
 		googleJson = new Gson();
 		this.configureConnectionToRabbit();
@@ -73,15 +75,14 @@ public class NodeMain {
 	public void startNode() {
 		try {
 			log.info(this.node.getName()+" Started");
-			Random r = new Random();
 			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 				Message message = googleJson.fromJson(new String(delivery.getBody(), "UTF-8"), Message.class);
-				log.info("["+this.node.getName()+"] " + delivery.getEnvelope().getRoutingKey() + " received: " + googleJson.toJson(message));
+				log.info("["+ delivery.getEnvelope().getRoutingKey() + "] received: " + googleJson.toJson(message));
 				//Asigna Tarea a Thread
 				log.info("["+this.node.getName()+"] " + "Working...");
-				
 				//asigno la tarea a un thread
-				ThreadNode tn = new ThreadNode(this.node,Long.parseLong(message.getHeader("token-id")),message, queueChannel,this.activesQueueName,outputQueueName,log);
+				Random r = new Random();
+				ThreadNode tn = new ThreadNode(r.nextLong(), this.node,Long.parseLong(message.getHeader("token-id")),message, queueChannel,this.activesQueueName,outputQueueName,log);
 				Thread nodeThread = new Thread(tn);
 				nodeThread.start();
 			};
@@ -99,16 +100,18 @@ public class NodeMain {
 		
 		
 		//CREO LOS DIFERENTES SERVICIOS QUE VA A TENER CADA UNO (AGREGAR RESTA, MULTIPLICACION, MOD, etc )
-		Service suma = (Service) new ServiceSuma(8071,"suma"); // DUDA: cuando se le pide el puerto al servicio?
+		//Service suma = (Service) new ServiceSuma(8071,"suma"); // DUDA: cuando se le pide el puerto al servicio?
+		//Service resta = (Service) new ServiceResta(8071,"resta");
+				
+		NodeMain nodeA = new NodeMain(new Node("NodoA", "localhost", 8071,10), "localhost");
+		nodeA.node.addService(new ServiceSuma(8071,"suma"));
+		nodeA.node.addService(new ServiceSuma(8072,"resta"));
+		nodeA.startNode();
 		
-		NodeMain node1 = new NodeMain(new Node("NodoA", "localhost", 8071,10), "localhost");
-		node1.node.addService(suma);
-		node1.startNode();
 		
-		
-		NodeMain node2 = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
-		node2.node.addService( new ServiceSuma(8072,"suma") );
-		node2.startNode();
+		NodeMain nodeB = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
+		nodeB.node.addService( new ServiceSuma(8073,"suma") );
+		nodeB.startNode();
 		
 		//NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
 		//node3.node.addService( new ServiceSuma(8073,"suma") );

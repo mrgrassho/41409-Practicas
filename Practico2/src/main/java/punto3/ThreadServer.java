@@ -41,7 +41,7 @@ public class ThreadServer implements Runnable{
 			queueChannel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
 			// Bind Queue 
 			queueChannel.queueBind(this.outputQueueName, EXCHANGE_NAME, String.valueOf(routingKey));
-			this.log.info(" [+] New Bind: ServerThread only will read messages with routing key "+routingKey );
+			this.log.info(" [+] New Bind: OutputQueue now will be writed by messages with routing key "+routingKey );
 				
 			// Funcion que se ejecuta cada vez que hay un mensaje en la cola de salida disponible.
 			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
