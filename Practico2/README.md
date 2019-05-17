@@ -1,5 +1,14 @@
 ﻿
-### Punto3 - Balanceador de Carga:
+# Punto3 - Balanceador de Carga:
+
+### Indice
+1. [Propuesta](#Propuesta)
+- [Dependencias](#Dependencias)
+- [Build & Run](#Build-&-Run)
+- [Scripts](#Scripts)
+- [Estado Desarrollo](#Estado-Desarrollo)
+
+### Propuesta
 
 Se diseño la siguiente arquitectura de colas:
 
@@ -54,3 +63,48 @@ Se diseño la siguiente arquitectura de colas:
 **Bibliografia / Ejemplos**:
 - [Balanceo de Carga](https://www.digitalocean.com/community/tutorials/what-is-load-balancing)
 - [RabbitMQ - Tutoriales](https://www.rabbitmq.com/getstarted.html)
+
+### Dependencias
+
+1. Instalar RabbitMQ ([Official Page](rabbitmq.com))
+
+- Instalar dependencias de java
+```
+mvn install
+```
+
+### Build & Run
+
+1. Iniciar servicio de RabbitMQ
+```
+rabbitmq-server start
+```
+
+- Correr las clases en el siguiente orden:
+```
+Dispatcher
+NodeMain
+ServerMain
+ClientGenerator
+```
+
+### Scripts
+
+Generador de peticiones directo sobre el RabbitMQ:
+```
+nano ClientGenerator.py
+# EDITAR los parametros USER y PASS con sus credenciales
+python3 ClientGenerator.py
+```
+
+### Estado Desarrollo
+
+#### TO-FIX:
+
+- [ ] Revisar getNextNodeSafe()
+- [ ] Corregir creacion dinamica de Nodos.
+
+#### TO-DO:
+
+- [ ] Agregar script que tire nodos al azar.
+- [ ] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher).
