@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
@@ -39,6 +40,13 @@ public class NodeMain {
 	private Node node;
 	private Gson googleJson;
 	private int max_tasks;
+	
+	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>( Arrays.asList(
+			"NodoA", "NodoB", "NodoC", "NodoD", "NodoE", "NodoF", "NodoG", "NodoH",
+			"NodoI", "NodoJ", "NodoK", "NodoL", "NodoM", "NodoN", "NodoO", "NodoP",
+			"NodoQ", "NodoR", "NodoS", "NodoT", "NodoU", "NodoV", "NodoW", "NodoX",
+			"NodoY", "NodoZ"
+	));
 
 	public Node getNode() {
 		return this.node;
@@ -106,20 +114,17 @@ public class NodeMain {
 		//CREO LOS DIFERENTES SERVICIOS QUE VA A TENER CADA UNO (AGREGAR RESTA, MULTIPLICACION, MOD, etc )
 		//Service suma = (Service) new ServiceSuma(8071,"suma"); // DUDA: cuando se le pide el puerto al servicio?
 		//Service resta = (Service) new ServiceResta(8071,"resta");
-
-		NodeMain nodeA = new NodeMain(new Node("NodoA", "localhost", 8071,10), "localhost");
-		nodeA.node.addService(new ServiceSuma(8071,"suma"));
-		nodeA.node.addService(new ServiceSuma(8072,"resta"));
-		nodeA.startNode();
 		
-
-		NodeMain nodeB = new NodeMain(new Node("NodoB", "localhost", 8072,10), "localhost");
-		nodeB.node.addService( new ServiceSuma(8073,"suma") );
-		nodeB.startNode();
-
-		//NodeMain node3 = new NodeMain(new Node("NodoC", "localhost", 8073,10), "localhost");
-		//node3.node.addService( new ServiceSuma(8073,"suma") );
-		//node3.startNode();
+		ArrayList<NodeMain> node = new ArrayList<NodeMain>();
+		int i =0;
+		for (String Nodo : DICCIONARIO) {
+			node.add(new NodeMain(new Node(Nodo, "localhost", 8071,20), "localhost"));
+			node.get(i).node.addService(new ServiceSuma(8071,"suma"));
+			node.get(i).node.addService(new ServiceSuma(8072,"resta"));
+			node.get(i).startNode();
+			i++;
+		}
+		
 
 	}
 
