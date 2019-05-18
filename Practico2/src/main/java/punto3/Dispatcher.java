@@ -41,7 +41,6 @@ public class Dispatcher {
 	public String outputQueueName = "outputQueue";
 	public String notificationQueueName = "notificationQueue";
 	public String GlobalStateQueueName = "GlobalStateQueue";
-	public String activesQueueName = "activeQueue";
 	public String inprocessQueueName = "inProcessQueue";
 	public String ip;
 	private Map<String, Thread> threads;
@@ -51,7 +50,6 @@ public class Dispatcher {
 	private ArrayList<Node> nodosActivos;
 	public static final String EXCHANGE_OUTPUT = "XCHNG-OUT";
 	public static final String EXCHANGE_NOTIFY = "XCHNG-NOTIFY";
-	public static final String EXCHANGE_GLOBAL_LOAD = "XCHNG-GLOBAL_LOAD";
 	// 1000 trys in a interval of 10ms => 10 seconds per node
 	public static final int RETRY_SLEEP_TIME = 10;
 	public static final int MAX_RETRIES_IN_NODE = 1000;
@@ -101,11 +99,9 @@ public class Dispatcher {
 			this.queueConnection = this.connectionFactory.newConnection();
 			this.queueChannel = this.queueConnection.createChannel();
 			this.queueChannel.queueDeclare(this.inputQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.outputQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.GlobalStateQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.notificationQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.inprocessQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.activesQueueName, true, false, false, null);
 			this.queueChannel.exchangeDeclare(EXCHANGE_NOTIFY, BuiltinExchangeType.DIRECT);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -148,7 +144,6 @@ public class Dispatcher {
 			this.queueChannel.queuePurge(this.inputQueueName);
 			this.queueChannel.queuePurge(this.GlobalStateQueueName);
 			this.queueChannel.queuePurge(this.notificationQueueName);
-			this.queueChannel.queuePurge(this.activesQueueName);
 			for (Node node : nodosActivos) {
 				this.queueChannel.queuePurge(node.getName());
 			}
@@ -495,10 +490,7 @@ public class Dispatcher {
 			// Init RabbitMQ Thread which listens to InputQueue
 			this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});
 			// Init RabbitMQ Thread which make sure that the message is attend it.
-			//this.queueChannel.basicConsume(inprocessQueueName, true, msgProcess, consumerTag -> {});
 			initMsgProcess();
-			// Listens node's activesQueue
-			this.queueChannel.basicConsume(activesQueueName, true, ActiveNodeDeliverCallback, consumerTag -> {});
 			// Init RabbitMQ Thread that listens and updates to ActiveQueue
 			this.healthChecker();
 		} catch (IOException e) {

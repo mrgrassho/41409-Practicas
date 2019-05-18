@@ -1,4 +1,4 @@
-﻿
+
 # Punto3 - Balanceador de Carga:
 
 ### Indice
@@ -32,11 +32,9 @@ Se diseño la siguiente arquitectura de colas:
 
 1. **ServerThread**, escucha peticiones de clientes. Es alimentado de dos Queues (Input / Output).
 
-- **Dispatcher**
+- **msgDispatch**, hilo encargado de atender un msg de la input Queue y enviarlo a Nodo para que atienda la solicitud.
 
-  - **msgDispatch**, hilo encargado de atender un msg de la input Queue y enviarlo a Nodo para que atienda la solicitud.
-
-  - **msgProcess**, hilo/s encargado/s de atender un msg de la inprocess Queue y esperar la confirmacion de la tarea en la notification Queue. En el caso de que se no se reciba la confirmacion se reenvia el msj a la cola de input y se marca el nodo en estado *DEAD*.
+- **messageProcessor**, hilo/s encargado/s de atender un msg de la inprocess Queue y esperar la confirmacion de la tarea en la notification Queue. En el caso de que se no se reciba la confirmacion se reenvia el msj a la cola de input y se elimina el nodo de la lista de nodos activos.
 
 - **healthChecker**, hilo encargado de monitorear el estado globlal del sistema y realizar la correspondiente acción para volver a estado normal la red.
 
@@ -57,7 +55,7 @@ Se diseño la siguiente arquitectura de colas:
 
 **InputQueue**, es aquella queue que recibe peticiones. El ServerMain es su productor y el Dispatcher su consumidor.
 
-**processQueue (n)**, es aquella queue que recibe peticiones ya destinadas a un Nodo en particular. El Dispatcher es su productor y el Nodo su consumidor.
+**processQueue (n)**, es aquella queue que recibe peticiones ya destinadas a un Nodo en particular. El msgProcessor es su productor y el Nodo su consumidor.
 
 **OutputQueue (n)**, es aquella queue en donde se escriben los resultados. El Nodo es el productor y el ServerMain es su consumidor.
 
@@ -70,14 +68,14 @@ Se diseño la siguiente arquitectura de colas:
 1. Instalar RabbitMQ ([Official Page](rabbitmq.com))
 
 - Instalar dependencias de java
-```
+```sh
 mvn install
 ```
 
 ### Build & Run
 
 1. Iniciar servicio de RabbitMQ
-```
+```sh
 rabbitmq-server start
 ```
 
@@ -92,7 +90,8 @@ ClientGenerator
 ### Scripts
 
 Generador de peticiones directo sobre el RabbitMQ:
-```
+
+```sh
 nano ClientGenerator.py
 # EDITAR los parametros USER y PASS con sus credenciales
 python3 ClientGenerator.py
@@ -104,9 +103,10 @@ python3 ClientGenerator.py
 
 - [ ] Revisar getNextNodeSafe() **[DONE]**
 - [ ] Corregir creacion dinamica de Nodos. **[DONE]**
-- [ ] Hacer que msgProcess() sea multi-Thread. (Single-Thread ocasiona problemas de lectura cuando hay mucha carga).
+- [ ] Hacer que msgProcess() sea multi-Thread. (Single-Thread ocasiona problemas de lectura cuando hay mucha carga). **[DONE]**
 
 #### TO-DO:
 
 - [ ] Agregar script que tire nodos al azar.
 - [ ] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher).
+- [ ] Persistir Lista de Nodos Activos cada cierto timepo x (Para recurperarse en caso de caida del dispatcher).
