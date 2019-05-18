@@ -41,7 +41,7 @@ public class NodeMain {
 	private Gson googleJson;
 	private int max_tasks;
 	
-	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>( Arrays.asList(
+	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>(Arrays.asList(
 			"NodoA", "NodoB", "NodoC", "NodoD", "NodoE", "NodoF", "NodoG", "NodoH",
 			"NodoI", "NodoJ", "NodoK", "NodoL", "NodoM", "NodoN", "NodoO", "NodoP",
 			"NodoQ", "NodoR", "NodoS", "NodoT", "NodoU", "NodoV", "NodoW", "NodoX",
@@ -120,7 +120,7 @@ public class NodeMain {
 		for (String Nodo : DICCIONARIO) {
 			node.add(new NodeMain(new Node(Nodo, "localhost", 8071,20), "localhost"));
 			node.get(i).node.addService(new ServiceSuma(8071,"suma"));
-			node.get(i).node.addService(new ServiceSuma(8072,"resta"));
+			node.get(i).node.addService(new ServiceResta(8072,"resta"));
 			node.get(i).startNode();
 			i++;
 		}

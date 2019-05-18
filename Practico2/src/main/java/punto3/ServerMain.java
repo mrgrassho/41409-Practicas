@@ -50,7 +50,6 @@ public class ServerMain {
 			this.queueConnection = this.connectionFactory.newConnection();
 			this.queueChannel = this.queueConnection.createChannel();
 			this.queueChannel.queueDeclare(this.inputQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.outputQueueName, true, false, false, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -69,7 +68,7 @@ public class ServerMain {
 				// Genera un ID Random de para el Thread -> TODO: Reemplazar por funcion mas potente.
 				Long routingKey =  r.nextLong();
 				if (routingKey < 0) routingKey *= -1;
-				ThreadServer ts = new ThreadServer(client, routingKey, this.queueChannel, this.inputQueueName, this.outputQueueName, log);
+				ThreadServer ts = new ThreadServer(client, routingKey, this.queueChannel, this.inputQueueName, log);
 				log.info("Nuevo TrheadServer: "+ routingKey);
 				Thread tsThread = new Thread(ts);
 				tsThread.start();

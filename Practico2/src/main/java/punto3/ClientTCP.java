@@ -18,6 +18,7 @@ import com.google.gson.Gson;
 public class ClientTCP implements Runnable {
 	Socket s;
 	int numClient;
+	static int REQUESTS = 30; 
 	private Logger log;
 	
 	public ClientTCP (String ip, int port, Logger log) {
@@ -37,17 +38,20 @@ public class ClientTCP implements Runnable {
 			ObjectOutputStream outputChannel = new ObjectOutputStream (s.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (s.getInputStream());
 			// Parametrizar -->
-			String llamada = "resta";  
-			Message funcion = new Message(llamada);
-			funcion.addParametro("num1", (int) (Math.random() * 10));
-			funcion.addParametro("num2", (int) (Math.random() * 10));
-			funcion.setHeader("client",String.valueOf(numClient));
-			//write to server 
-			outputChannel.writeObject(funcion);
-			log.info("["+numClient+"] Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
-			//read 
-			Message response = (Message) inputChannel.readObject();
-			log.info("["+numClient+"] El servidor ha respondido> "+response.getResultado());
+			int c = REQUESTS;
+			while (c-- > 0) {
+				String llamada = (Math.random() * 10 > 5) ? "resta" : "suma";
+				Message funcion = new Message(llamada);
+				funcion.addParametro("num1", (int) (Math.random() * 10));
+				funcion.addParametro("num2", (int) (Math.random() * 10));
+				funcion.setHeader("client",String.valueOf(numClient));
+				//write to server 
+				outputChannel.writeObject(funcion);
+				log.info("["+numClient+"] Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
+				//read 
+				Message response = (Message) inputChannel.readObject();
+				log.info("["+numClient+"] El servidor ha respondido> "+response.getResultado());
+			}
 			s.close();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();

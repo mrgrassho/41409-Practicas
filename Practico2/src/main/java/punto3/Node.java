@@ -119,6 +119,7 @@ public class Node {
 			}
 			i++;
 		}
+		System.out.println(" {FIND} " + find + " - " + name);
 		return find;
 	}
 
