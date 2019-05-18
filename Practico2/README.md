@@ -42,13 +42,14 @@ Se diseño la siguiente arquitectura de colas:
 
 | Estado | Carga*  | Acción
 | :------------- | :------------- |
-| **GLOBAL_CRITICAL**  | 80% - 100% | Se crean **nodosActivos/2** nuevos nodos**
-| **GLOBAL_ALERT** | 60% - 80% | Se crean **nodosActivos/4** nuevos nodos**
+| **GLOBAL_CRITICAL**  | 80% - 100% | Se crean **nodosActivos/2** nuevos nodos (si es mayor a 1, sino 1)**
+| **GLOBAL_ALERT** | 60% - 80% | Se crean **nodosActivos/4** nuevos nodos (si es mayor a 1, sino 1)**
 | **GLOBAL_NORMAL** | 20% - 60% | -
-| **GLOBAL_IDLE** | 0% - 20% | Se eliminan **nodosActivos/3** nodos
+| **GLOBAL_IDLE** | 0% - 20% | Se eliminan **nodosActivos/3** nodos (si es mayor a 1, sino 1)
 
 *Sumatoria de todas las cargas de cada Nodo.  
 **Asignandole todos los servicios existentes.
+
 
 - **Nodo**, servidor de aplicación concreto, que por cada nuevo nodo llama a un Thread para que atienda la tarea.
 
@@ -101,8 +102,9 @@ python3 ClientGenerator.py
 
 #### TO-FIX:
 
-- [ ] Revisar getNextNodeSafe()
-- [ ] Corregir creacion dinamica de Nodos.
+- [ ] Revisar getNextNodeSafe() **[DONE]**
+- [ ] Corregir creacion dinamica de Nodos. **[DONE]**
+- [ ] Hacer que msgProcess() sea multi-Thread. (Single-Thread ocasiona problemas de lectura cuando hay mucha carga).
 
 #### TO-DO:
 
