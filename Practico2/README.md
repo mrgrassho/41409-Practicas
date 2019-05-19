@@ -41,8 +41,8 @@ Se diseño la siguiente arquitectura de colas:
 | Estado | Carga*  | Acción
 | :------------- | :------------- |
 | **GLOBAL_CRITICAL**  | 80% - 100% | Se crean **nodosActivos/2** nuevos nodos (si es mayor a 1, sino 1)**
-| **GLOBAL_ALERT** | 60% - 80% | Se crean **nodosActivos/4** nuevos nodos (si es mayor a 1, sino 1)**
-| **GLOBAL_NORMAL** | 20% - 60% | -
+| **GLOBAL_ALERT** | 50% - 80% | Se crean **nodosActivos/4** nuevos nodos (si es mayor a 1, sino 1)**
+| **GLOBAL_NORMAL** | 20% - 50% | -
 | **GLOBAL_IDLE** | 0% - 20% | Se eliminan **nodosActivos/3** nodos (si es mayor a 1, sino 1)
 
 *Sumatoria de todas las cargas de cada Nodo.  
@@ -89,13 +89,22 @@ ClientGenerator
 
 ### Scripts
 
-Generador de peticiones directo sobre el RabbitMQ:
+Para testear rapidamente el funcionamiento del balanceador:
 
+1. Correr las clases `Dispatcher`  y `NodeMain`.
+
+- Generar peticiones directo sobre RabbitMQ con script en python:
 ```sh
 nano ClientGenerator.py
 # EDITAR los parametros USER y PASS con sus credenciales
 python3 ClientGenerator.py
 ```
+
+- Observe el compartamiento a través de la consola o log generado por el Dispatcher (`Practico2/Dispatcher.log`). Preste atención a las lineas que contienen el estado del balanceador, la cual indica el estado actual, la carga actual y la carga máxima (ambas sumatoria de todos los nodos):
+```csharp
+22:55:55 [pool-1-thread-10] INFO  -  [HEALTH_CHECKER] Global State -> GLOBAL_NORMAL | CURRNT_LOAD:113 | MAX_LOAD:240
+```
+
 
 ### Estado Desarrollo
 
