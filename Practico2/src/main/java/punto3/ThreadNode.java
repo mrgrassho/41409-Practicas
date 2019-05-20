@@ -49,6 +49,7 @@ public class ThreadNode implements Runnable {
 			
 			Service s = this.node.findServiceByName(this.task.getFunctionName());
 			if (s!=null) {
+				log.info("TASK - "+ s.getName());
 				log.info("["+ this.node.getName()+ " - Thread "+this.id+"] :" +this.task.parametros.values());
 				
 				this.task.setResultado(s.execute(this.task.parametros.values().toArray()));
@@ -60,7 +61,8 @@ public class ThreadNode implements Runnable {
 				String mString =  googleJson.toJson(res); 	
 				//queueChannel.queueBind("notificationQueue", EXCHANGE_OUTPUT, res.getHeader("token-id"));
 				//log.info("["+ this.node.getName()+ "] declared bind> notificacionQueue | Exchange '"+EXCHANGE_OUTPUT+"' | routingKey '"+res.getHeader("token-id")+"'");
-				queueChannel.basicPublish(EXCHANGE_OUTPUT, res.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
+				queueChannel.basicPublish("", res.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
+				queueChannel.basicPublish(EXCHANGE_OUTPUT, "", MessageProperties.PERSISTENT_TEXT_PLAIN, mString.getBytes("UTF-8"));
 				log.info("["+ this.node.getName()+ " - Thread "+this.id+"]  Sent response "+ googleJson.toJson(res).toString());
 			}
 		} catch (IOException e) {

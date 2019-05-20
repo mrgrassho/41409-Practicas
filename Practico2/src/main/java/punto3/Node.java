@@ -23,6 +23,10 @@ public class Node {
 		this.nodeState = NodeState.IDLE;
 	}
 	
+	
+	public int getPort() {
+		return this.port;
+	}
 	public int getMaxLoad() {
 		return maxLoad;
 	}
@@ -42,9 +46,11 @@ public class Node {
 	}
 
 	public void decreaseCurrentLoad(int currentLoad) {
-		this.currentLoad -= currentLoad;
-		this.updatePercentageLoad();
-		this.updateState();
+		if (getCurrentLoad() > 0) {
+			this.currentLoad -= currentLoad;
+			this.updatePercentageLoad();
+			this.updateState();
+		}
 	}
 
 	private void updateState() {
@@ -94,7 +100,7 @@ public class Node {
 	public boolean hasService(String name){
 		boolean find = false;
 		for (Service s : services) {
-			if (s.getName() == name) {
+			if (s.getName().equals(name)) {
 				find = true;
 				break;
 			}
@@ -113,6 +119,7 @@ public class Node {
 			}
 			i++;
 		}
+		System.out.println(" {FIND} " + find + " - " + name);
 		return find;
 	}
 
