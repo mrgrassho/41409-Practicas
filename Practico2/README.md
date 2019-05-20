@@ -12,21 +12,21 @@
 
 Se diseño la siguiente arquitectura de colas:
 
-![arquitectura de colas](images/punto3-diagramas-arq_queues.png)
+![arquitectura de colas](Diagrams/punto3-diagramas-arq_queues.png)
 
 #### Diagramas de Clases:
 
 #### Cliente - Server
 
-![Cliente-Server](images/punto3-diagramas-dc1.png)
+![Cliente-Server](Diagrams/punto3-diagramas-dc1.png)
 
 #### Dispatcher
 
-![Dispatcher](images/punto3-diagramas-dc2.png)
+![Dispatcher](Diagrams/punto3-diagramas-dc2.png)
 
 #### Nodo
 
-![Nodo](images/punto3-diagramas-dc3.png)
+![Nodo](Diagrams/punto3-diagramas-dc3.png)
 
 #### Aclaraciones
 
