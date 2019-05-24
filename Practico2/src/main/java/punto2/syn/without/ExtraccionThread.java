@@ -1,4 +1,4 @@
-package punto2.syn.sin;
+package punto2.syn.without;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -19,14 +19,14 @@ public class ExtraccionThread implements Runnable {
 	private Logger log;
 	private Socket client;
 	private Gson gson;
-	
+
 	ExtraccionThread(String filename, Logger log, Gson gson, Socket client){
 		this.filename = filename;
 		this.log = log;
 		this.client = client;
 		this.gson = gson;
 	}
-	
+
 	@Override
 	public void run() {
 		try {

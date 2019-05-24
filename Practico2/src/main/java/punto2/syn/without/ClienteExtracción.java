@@ -1,4 +1,4 @@
-package punto2.syn.sin;
+package punto2.syn.without;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ public class ClienteExtracción {
 	public static String IP_DEPOSITO = "localhost";
 	public static int PORT_EXTRACCION = 9000;
 	public static int PORT_DEPOSITO = 9001;
-	
+
 	public static void main(String[] args) {
 		System.out.println("ClientGenerator started.");
 		Cliente cl = new Cliente(IP_EXTRACCION, PORT_EXTRACCION, IP_DEPOSITO, PORT_DEPOSITO);
@@ -18,7 +18,7 @@ public class ClienteExtracción {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		while(true) {
 			try {
 				cl.extraccion(new Double(50));
@@ -30,9 +30,9 @@ public class ClienteExtracción {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+
 		}
-		 
+
 	}
 
 }
