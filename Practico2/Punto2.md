@@ -1,7 +1,7 @@
 # Punto2 - Concurrencia
 
 - [Build & Run](#Build-&-Run)
-- [Concluciones](#Concluciones)
+- [Conclusiones](#Conclusiones)
 
 ### Build & Run
 
@@ -19,7 +19,7 @@ ClienteExtraccion
 ClienteExtraccion
 ```
 
-### Concluciones
+### Conclusiones
 
 Se decide sincronizar las partes de código en las que se lee, procesa escribe en el archivo de saldos. Forzando así que las transacciones sean atómicas y que no se modifiquen entre ellas. Ejemplo de transaccion sincronizada:
 
