@@ -1,4 +1,4 @@
-package punto2.sin.synch;
+package punto2.synch.sin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

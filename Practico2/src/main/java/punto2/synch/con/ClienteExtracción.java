@@ -1,5 +1,4 @@
-package punto2.sin.synch;
-
+package punto2.synch.con;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -22,7 +21,7 @@ public class ClienteExtracción {
 		while(true) {
 			try {
 				cl.extraccion(new Double(50));
-				Thread.sleep(1000);
+				Thread.sleep(200);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

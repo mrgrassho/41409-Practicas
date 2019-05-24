@@ -1,5 +1,7 @@
-package punto2.con.synch;
-
+package punto2.synch.con;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,13 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-public class DepositoServer {
+public class ExtraccionServer {
 	int port;
 	private final Gson gson = new Gson();
-	private final Logger log = LoggerFactory.getLogger(DepositoServer.class);
+	private final Logger log = LoggerFactory.getLogger(ExtraccionServer.class);
 	private static String FILENAME = "extras/saldo.txt"; 
 	
-	public DepositoServer(int i) {
+	public ExtraccionServer(int i) {
 		this.port = i;
 		this.startServer();
 	}
@@ -26,7 +28,7 @@ public class DepositoServer {
 			System.out.println(" Server started on port: "+this.port);
 			while (true) {
 				Socket client = ss.accept();
-				DepositoThread ts = new DepositoThread(FILENAME, log, gson, client);
+				ExtraccionThread ts = new ExtraccionThread(FILENAME, log, gson, client);
 				Thread tsThread = new Thread(ts);
 				tsThread.start();
 			}
@@ -36,9 +38,8 @@ public class DepositoServer {
 	}
 	public static void main(String[] args) {
 		int thread = (int) Thread.currentThread().getId();
-		String packetName=DepositoServer.class.getSimpleName().toString()+"-"+thread;
+		String packetName=ExtraccionServer.class.getSimpleName().toString()+"-"+thread;
 		System.setProperty("log.name",packetName);
-		DepositoServer stcp = new DepositoServer(9001);
+		ExtraccionServer stcp = new ExtraccionServer(9000);
 	}
-
 }

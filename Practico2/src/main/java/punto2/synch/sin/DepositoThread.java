@@ -1,4 +1,4 @@
-package punto2.con.synch;
+package punto2.synch.sin;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -37,26 +37,25 @@ public class DepositoThread implements Runnable {
 			while((k = inputChannel.readLine()) != null) {
 				Double monto = gson.fromJson(k, Double.class);
 				log.info(" [-] Nueva Deposito por $" + monto );
-				BufferedReader br = new BufferedReader(new FileReader(filename));
-				synchronized (br) {
-					Double saldo = new Double(br.readLine());
-					log.info(" [-] *Antes* de Deposito -> Monto:" + monto + ", Saldo:" + saldo);
-					saldo += monto;
-					try {
-						Thread.sleep(40);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					FileWriter writer = new FileWriter(filename);
-					writer.write(String.valueOf(saldo), 0, String.valueOf(saldo).length());
-					String json = gson.toJson("Deposito Exitoso! Saldo Actual: "+saldo);
-					outputChannel.print(json);
-					log.info(" [-] Deposito Exitoso!");
-					writer.close();
-					log.info(" [-] *Despues* de Deposito -> Monto:" + monto + ", Saldo:" + saldo);
-					br.close();
+				BufferedReader br;
+				br = new BufferedReader(new FileReader(filename));
+				Double saldo = new Double(br.readLine());
+				log.info(" [-] *Antes* de Deposito -> Monto:" + monto + ", Saldo:" + saldo);
+				saldo += monto;
+				try {
+					Thread.sleep(40);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+				FileWriter writer = new FileWriter(filename);
+				writer.write(String.valueOf(saldo), 0, String.valueOf(saldo).length());
+				String json = gson.toJson("Deposito Exitoso! Saldo Actual: "+saldo);
+				outputChannel.print(json);
+				log.info(" [-] Deposito Exitoso!");
+				writer.close();
+				log.info(" [-] *Despues* de Deposito -> Monto:" + monto + ", Saldo:" + saldo);
+				br.close();
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

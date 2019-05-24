@@ -1,5 +1,4 @@
-package punto2.con.synch;
-
+package punto2.synch.con;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;

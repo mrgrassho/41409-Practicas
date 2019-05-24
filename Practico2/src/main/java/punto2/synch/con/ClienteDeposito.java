@@ -1,5 +1,4 @@
-package punto2.sin.synch;
-
+package punto2.synch.con;
 import java.io.IOException;
 
 public class ClienteDeposito {
