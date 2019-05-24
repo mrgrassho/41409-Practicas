@@ -1,4 +1,4 @@
-package punto2.synch.con;
+package punto2.syn.con;
 
 import java.util.ArrayList;
 

@@ -1,5 +1,4 @@
-package punto2.synch.sin;
-
+package punto2.syn.con;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;

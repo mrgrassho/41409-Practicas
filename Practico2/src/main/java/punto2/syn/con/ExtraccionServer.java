@@ -1,5 +1,4 @@
-package punto2.synch.sin;
-
+package punto2.syn.con;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

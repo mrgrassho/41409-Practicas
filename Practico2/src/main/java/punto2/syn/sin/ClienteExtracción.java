@@ -1,17 +1,19 @@
-package punto2.synch.con;
-import java.io.IOException;
+package punto2.syn.sin;
 
-public class ClienteDeposito {
+import java.io.IOException;
+import java.util.ArrayList;
+
+public class ClienteExtracción {
 	public static String IP_EXTRACCION = "localhost";
 	public static String IP_DEPOSITO = "localhost";
 	public static int PORT_EXTRACCION = 9000;
 	public static int PORT_DEPOSITO = 9001;
 	
 	public static void main(String[] args) {
-		System.out.println("Cliente Deposito started.");
+		System.out.println("ClientGenerator started.");
 		Cliente cl = new Cliente(IP_EXTRACCION, PORT_EXTRACCION, IP_DEPOSITO, PORT_DEPOSITO);
 		try {
-			cl.openSocketDeposito();
+			cl.openSocketExtraccion();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -19,8 +21,8 @@ public class ClienteDeposito {
 		
 		while(true) {
 			try {
-				cl.deposito(new Double(100));
-				Thread.sleep(2000);
+				cl.extraccion(new Double(50));
+				Thread.sleep(1000);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -30,6 +32,7 @@ public class ClienteDeposito {
 			}
 			
 		}
-
+		 
 	}
+
 }
