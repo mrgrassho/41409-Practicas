@@ -4,11 +4,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-public class ServerImplementerSobel implements RemoteInt {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class WorkerSobel implements RemoteInt {
     static int[][] sobel_x = new int[][]{
 		{-1, 0,1}, 
 		{-2, 0,2}, 
@@ -21,7 +27,41 @@ public class ServerImplementerSobel implements RemoteInt {
 		{1, 2, 1}				
 	};
 	
-	public byte[] sobel(byte[] inImgBytes) throws IOException, InterruptedException {
+	private final static Logger log = LoggerFactory.getLogger(WorkerSobel.class);
+	private int portRMI;
+	private int idWorker;
+	
+	public WorkerSobel(int idWorker, int portRMI) throws RemoteException {
+		log.info("============ WorkerSobel iniciado ==============");
+		this.portRMI = portRMI;
+		this.idWorker = idWorker;
+		startRMI();
+	}
+	
+	public int getPortRMI() {return portRMI;}
+
+	public int getIdWorker() {return idWorker;}
+
+
+	public void startRMI() throws RemoteException {
+		Registry server = LocateRegistry.createRegistry(this.portRMI);
+		log.info("-----WorkersSobel Servicio RMI Iniciado en puerto "+this.portRMI+"-----");
+		
+		int portExportW = 9000 + this.idWorker;
+		RemoteInt serviceSobel = (RemoteInt) UnicastRemoteObject.exportObject(this, portExportW);
+		log.info("-----WorkerSobel asociado a puerto "+portExportW+" -----");
+		
+		server.rebind("sobelImagenes", serviceSobel);
+		log.info("-----Server bind de servicio JNDI realizado -----");
+		
+		log.info("============ conexion para ServerSobel RMI finalizada correctamente ==============");
+	}
+	
+	public String proceso() throws IOException, InterruptedException {
+		return "proceso RMI en Worker "+ this.getIdWorker()+" funcionando";
+	}
+	
+	public byte[] sobelDistribuido(byte[] inImgBytes) throws IOException, InterruptedException {
 		BufferedImage inImg = ImageIO.read(new ByteArrayInputStream(inImgBytes));
 		int i, j;
 		int  max= 0, min=99999;

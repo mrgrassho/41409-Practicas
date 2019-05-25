@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 
 import ch.qos.logback.classic.Logger;
 
-public class SobelClientThread implements Runnable{
+public class ServerSobelThread implements Runnable{
 
 	private int id;
 	private String ipRMI;
@@ -19,7 +19,7 @@ public class SobelClientThread implements Runnable{
 	private Logger log;
 	private SobelRequest request;
 	
-	public SobelClientThread(int id, String ipRMI, int portRMI,String QueueRespones , SobelRequest request) throws UnknownHostException, IOException{
+	public ServerSobelThread(int id, String ipRMI, int portRMI,String QueueRespones , SobelRequest request) throws UnknownHostException, IOException{
 		this.id = id;
 		this.ipRMI = ipRMI;
 		this.portRMI = portRMI;

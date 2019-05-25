@@ -9,5 +9,6 @@ import java.util.ArrayList;
 
 public interface RemoteInt extends Remote{
 	
-	public byte[] sobel (byte[] image) throws IOException, InterruptedException;
+	public byte[] sobelDistribuido (byte[] image) throws IOException, InterruptedException;
+	public String proceso () throws IOException, InterruptedException;
 }

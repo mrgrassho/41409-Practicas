@@ -27,19 +27,19 @@ import Punto4.RemoteInt;
 
 public class SobelClient {
 				
-	private static final int portSocket = 9000;
-	private ArrayList<Integer> portServers;
+	private int portServer; //para el server que funciona como dispatcher entre los Worker. Sera el 80.
 				
 	
-	public SobelClient(ArrayList<Integer> portServers) {
-		this.portServers = portServers;
+	public SobelClient(int portServer) {
+		this.portServer = portServer;
 	}
 	
 	
 	public String sobelCall(String pathImage, String tipoSobel) throws IOException, NotBoundException, InterruptedException, TimeoutException {		
 
-		String entryPath = pathImage;
+		long start = System.currentTimeMillis(); // INICIO tiempo tarea
 		
+		String entryPath = pathImage;
 		int pos = entryPath.indexOf(".");
 		String nameImage = entryPath.substring(0, pos);
 		String extensionImage = entryPath.substring(pos, entryPath.length());;		
@@ -48,93 +48,116 @@ public class SobelClient {
 		
 		FileInputStream inFile = new FileInputStream(entryPath);
 		BufferedImage inImg = ImageIO.read(inFile);
+		BufferedImage resultImg;
 		
-		BufferedImage outImg;
-		
-		long start = System.currentTimeMillis();
-		
-		Registry clientRMI = LocateRegistry.getRegistry("localhost", this.portServers.get(0));
-		System.out.println("----- Cliente conectado a un 1 Server implementer en puerto"+this.portServers.get(0)+"-----");
-		RemoteInt ri = (RemoteInt) clientRMI.lookup("sobelImagenes");
-		//--------- proceso --------------------------
 		if (tipoSobel.equals("local")) {
+			resultImg = sobelLocal(inImg);
+		}else {
+			Registry clientRMI = LocateRegistry.getRegistry("localhost", this.portServer);
+			System.out.println("----- Cliente conectado a server principal en puerto "+this.portServer+"-----");
+			RemoteInt ri = (RemoteInt) clientRMI.lookup("sobelImagenes");
 			ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
 			ImageIO.write(inImg, "jpg", imgSend);
-			byte[] imgResult = ri.sobel(imgSend.toByteArray());
-			outImg = ImageIO.read(new ByteArrayInputStream(imgResult));
-		
-		}else { // distribuido
-			
-			//declare queue donde me llegan las respuestas.
-			 ConnectionFactory factory = new ConnectionFactory();
-			 factory.setHost("localhost");
-			 Connection connection = factory.newConnection();
-			 Channel channel = connection.createChannel();
-			 String QUEUE_NAME = "QueueSobel"; 
-			 channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-			
-			int qSector = (int)(inImg.getWidth()/this.portServers.size());
-			System.out.println("tamaño del sector> "+qSector);
-			int actualSector = 0;
-			int contServer = 0;
-			BufferedImage inParcialImg;
-			BufferedImage outParcialImg;			
-			// declaro variables para imagen resultado
-			int w = inImg.getWidth(); 
-			int h = inImg.getHeight();
-			outImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-			Graphics unionImages = outImg.getGraphics();
-		
-			while (actualSector<inImg.getWidth()) {
-				int sectorSize = actualSector+qSector;
-				if (sectorSize>inImg.getWidth()) {
-				   int imageEnd = inImg.getWidth() - actualSector;
-				   inParcialImg = inImg.getSubimage(actualSector, inImg.getMinY(), imageEnd, inImg.getHeight()); //funcion para partir la imagen.			
-				}else {// caso normal
-					inParcialImg = inImg.getSubimage(actualSector, inImg.getMinY(), qSector, inImg.getHeight()); 
-				}
-				
-				/* me guarda las imagenes partidas SIN SOBEL
-				outputPath = nameImage + "-OriginalPart"+actualSector +extensionImage;
-				FileOutputStream outFile = new FileOutputStream(outputPath);
-				ImageIO.write(inParcialImg, "JPG", outFile);
-				*/
-				
-				//llamo al servicio por RMI
-				ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
-				ImageIO.write(inParcialImg, "jpg", imgSend);
-				byte[] imgResult = ri.sobel(imgSend.toByteArray());
-				outParcialImg = ImageIO.read(new ByteArrayInputStream(imgResult));
-				
-				/* me guarda las imagenes partidas CON SOBEL
-    			outputParcialPath = nameImage + "-SobelPart"+actualSector +extensionImage;
-				FileOutputStream outParcialFile = new FileOutputStream(outputParcialPath);
-				ImageIO.write(outParcialImg, "JPG", outParcialFile);
-				 */
-				
-				unionImages.drawImage(outParcialImg, actualSector, 0, null); 
-			
-				actualSector+= qSector;
-				contServer++;
-			}
-			
+			byte[] outImg = ri.sobelDistribuido(imgSend.toByteArray());
+			resultImg = ImageIO.read(new ByteArrayInputStream(outImg));
 		}
-		//--------------------------------------------
 		
 		FileOutputStream outResultFile = new FileOutputStream(outputPath);
-		ImageIO.write(outImg, "JPG", outResultFile);
+		ImageIO.write(resultImg, "JPG", outResultFile);
 		
 		long end = System.currentTimeMillis();
 		System.out.println(" ELAPSED TIME: "+(end-start));
 		return outputPath;
 	}			
 			
-	
-	
-	public static void main(ArrayList<Integer> args) throws IOException, NotBoundException, InterruptedException, TimeoutException {
+	// -----------------------------------------------------------------------------------------------------
+	public BufferedImage sobelLocal(BufferedImage inImg) {
+	    int[][] sobel_x = new int[][]{
+			{-1, 0,1}, 
+			{-2, 0,2}, 
+			{-1, 0,1}	
+		};
+		
+		int[][] sobel_y = new int[][]{
+			{-1,-2,-1},
+			{0, 0, 0},
+			{1, 2, 1}				
+		};
+		
+		int i, j;
+		int  max= 0, min=99999;
+		float[][] Gx;
+		float[][] Gy;
+		float[][] G;
+		
+		int width = inImg.getWidth();
+		int height = inImg.getHeight();
+		System.out.println("W:" + width);
+		System.out.println("H:" + height);
+		float[] pixels = new float[(int) width * (int) height];
+		float[][] output = new float[(int) width][(int) height];
+		
+			int counter2 = 0;
+	        for (int xx = 0; xx < width; xx++) {
 
+	            for (int yy = 0; yy < height; yy++) {
+	            	try{
+	            		
+	            		pixels[counter2] = inImg.getRGB(xx, yy);
+	            		output[xx][yy] = inImg.getRGB(xx, yy);
+	            	
+	            	}catch(Exception e1){
+	            	    System.out.println("Error: " + " x: "+ yy + " y: " + xx);
+	            	    
+	            	}
+	                counter2++;
+	            }
+	        }
+	        
+
+		Gx = new float[width][height];
+		Gy = new float[width][height];
+		G = new float[width][height];
+
+		for (i = 0; i < width; i++) {
+			for (j = 0; j < height; j++) {
+				if (i == 0 || i == width - 1 || j == 0 || j == height - 1)
+					Gx[i][j] = Gy[i][j] = G[i][j] = 0;
+				else {
+					// Calculo x
+			    	  
+			    	  Gx[i][j] = ((sobel_x[0][0] * output[i-1][j-1]) + (sobel_x[0][1] * output[i][j-1]) + (sobel_x[0][2] * output[i+1][j-1]) + (sobel_x[1][0] * output[i-1][j]) + (sobel_x[1][1] * output[i][j]) + (sobel_x[1][2] * output[i+1][j]) + (sobel_x[2][0] * output[i-1][j+1]) + (sobel_x[2][1] * output[i][j+1]) + (sobel_x[2][2] * output[i+1][j+1])); 
+			    	  // Calculo y
+			    	  Gy[i][j] = ((sobel_y[0][0] * output[i-1][j-1]) + (sobel_y[0][1] * output[i][j-1]) + (sobel_y[0][2] * output[i+1][j-1]) + (sobel_y[1][0] * output[i-1][j]) + (sobel_y[1][1] * output[i][j]) + (sobel_y[1][2] * output[i+1][j]) + (sobel_y[2][0] * output[i-1][j+1]) + (sobel_y[2][1] * output[i][j+1]) + (sobel_y[2][2] * output[i+1][j+1]));
+					
+					G[i][j] = (Math.abs(Gx[i][j]) + Math.abs(Gy[i][j]));
+					
+				}
+			}
+		}
+		
+		// Saco los m�x y min para determinar LUEGO LAS DIVISIONES Y NIVEL DE DETALLE.
+		int counter1 = 0;
+		for (int yy = 0; yy < height; yy++) {
+			for (int xx = 0; xx < width; xx++) {
+				pixels[counter1] = (int) G[xx][yy];
+				counter1 = counter1 + 1;
+			}
+		}
+		
+		BufferedImage outImg = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		outImg.getRaster().setPixels(0, 0, width, height, pixels);
+
+		return outImg;
+	}
+	
+	//---------------------------------------------------------------------------------------------------------------------------------
+	
+	public static void main(String[] args) throws IOException, NotBoundException, InterruptedException, TimeoutException {
+
+		int portServer = 80;
+		SobelClient sobel1  = new SobelClient(portServer);
 		System.out.println("----- SobelClient iniciado -----");
-		SobelClient sobel1  = new SobelClient(args);
 				
 		//System.out.println("Ingrese la ruta de la imagen a modificar: ");
 		//Scanner scannerImage = new Scanner(System.in);
