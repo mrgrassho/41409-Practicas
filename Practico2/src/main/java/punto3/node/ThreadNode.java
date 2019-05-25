@@ -1,4 +1,4 @@
-package punto3;
+package punto3.node;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -12,6 +12,8 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.MessageProperties;
+
+import punto3.core.Message;
 
 public class ThreadNode implements Runnable {
 	

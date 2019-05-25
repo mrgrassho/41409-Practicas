@@ -1,7 +1,9 @@
-package punto3;
+package punto3.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import punto3.server.ServerMain;
 
 public class ClientGenerator {
 	private final static Logger log = LoggerFactory.getLogger(ClientGenerator.class);

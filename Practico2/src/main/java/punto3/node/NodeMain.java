@@ -1,10 +1,13 @@
-package punto3;
+package punto3.node;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
@@ -21,6 +24,8 @@ import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.MessageProperties;
 
 import ch.qos.logback.core.joran.action.NewRuleAction;
+import punto3.core.Message;
+import punto3.server.ServerMain;
 
 
 public class NodeMain {
@@ -35,8 +40,10 @@ public class NodeMain {
 	private String activesQueueName;
 	private String myNodeQueueName;
 	private String notificationQueueName;
+	public static final String RABBITMQ_CONFIG_FILE="src/main/java/punto3/resources/rabbitmq.properties";
 
 	private String ipRabbitMQ;
+	private int portRabbitMQ;
 	private Node node;
 	private Gson googleJson;
 	private int max_tasks;
@@ -52,11 +59,9 @@ public class NodeMain {
 		return this.node;
 	}
 
-	public NodeMain(Node node, String ipRabbitMQ) {
+	public NodeMain(Node node) {
 		this.node = node;
-		this.ipRabbitMQ = ipRabbitMQ;
-		this.username = "admin";
-		this.password = "admin";
+		configRabbitParms();
 		this.activesQueueName = "activeQueue";
 		this.outputQueueName = "outputQueue";
 		this.notificationQueueName = "notificationQueue";
@@ -65,11 +70,26 @@ public class NodeMain {
 		this.configureConnectionToRabbit();
 		log.info(" RabbitMQ - Connection established");
 	}
+	
+	void configRabbitParms() {
+		try (InputStream input = new FileInputStream(RABBITMQ_CONFIG_FILE)) {
+            Properties prop = new Properties();
+            // load a properties file
+            prop.load(input);
+            this.ipRabbitMQ = prop.getProperty("IP");
+            this.portRabbitMQ = Integer.parseInt(prop.getProperty("PORT"));
+            this.username = prop.getProperty("USER");
+            this.password = prop.getProperty("PASS");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+	}
 
 	private void configureConnectionToRabbit() {
 		try {
 			this.connectionFactory = new ConnectionFactory();
 			this.connectionFactory.setHost(this.ipRabbitMQ);
+			this.connectionFactory.setPort(this.portRabbitMQ);
 			this.connectionFactory.setUsername(this.username);
 			this.connectionFactory.setPassword(this.password);
 			this.queueConnection = this.connectionFactory.newConnection();
@@ -118,7 +138,7 @@ public class NodeMain {
 		ArrayList<NodeMain> node = new ArrayList<NodeMain>();
 		int i =0;
 		for (String Nodo : DICCIONARIO) {
-			node.add(new NodeMain(new Node(Nodo, "localhost", 8071,20), "localhost"));
+			node.add(new NodeMain(new Node(Nodo, "localhost", 8071,20)));
 			node.get(i).node.addService(new ServiceSuma(8071,"suma"));
 			node.get(i).node.addService(new ServiceResta(8072,"resta"));
 			node.get(i).startNode();

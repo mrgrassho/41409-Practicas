@@ -1,44 +1,53 @@
-package punto3;
+package punto3.core;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
-
-import javax.sound.midi.MidiDevice.Info;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.rabbitmq.client.AMQP.Queue;
+
+import punto3.core.InterfaceSerializer;
+import punto3.node.Node;
+import punto3.node.NodeState;
+import punto3.node.Service;
+import punto3.node.ServiceResta;
+import punto3.node.ServiceSuma;
+
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DeliverCallback;
-import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.*;
+import javax.xml.xpath.XPathExpressionException;
+
+import java.io.*;
+
 public class Dispatcher {
 	public final Logger log = LoggerFactory.getLogger(Dispatcher.class);
+	public static final String NODE_CONFIG_FILE="src/main/java/punto3/resources/nodes.xml";
+	public static final String RABBITMQ_CONFIG_FILE="src/main/java/punto3/resources/rabbitmq.properties";
 	private String username;
 	private String password;
 	private ConnectionFactory connectionFactory;
 	private Connection queueConnection;
 	private Channel queueChannel;
 	public String inputQueueName = "inputQueue";
-	public String outputQueueName = "outputQueue";
 	public String notificationQueueName = "notificationQueue";
 	public String GlobalStateQueueName = "GlobalStateQueue";
 	public String inprocessQueueName = "inProcessQueue";
@@ -58,22 +67,16 @@ public class Dispatcher {
 	private GlobalState globalState;
 	private volatile int globalMaxLoad;
 	private volatile int globalCurrentLoad;
+	private DocumentBuilder builder;
+	private Document documentNodes;
 
-	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>( Arrays.asList(
-			"NodoA", "NodoB", "NodoC", "NodoD", "NodoE", "NodoF", "NodoG", "NodoH",
-			"NodoI", "NodoJ", "NodoK", "NodoL", "NodoM", "NodoN", "NodoO", "NodoP",
-			"NodoQ", "NodoR", "NodoS", "NodoT", "NodoU", "NodoV", "NodoW", "NodoX",
-			"NodoY", "NodoZ"
-	));
+	private ArrayList<String> DICCIONARIO;
 	
 
 	private EstadoCreador estadoCreador = EstadoCreador.IDLE;
 
 	public Dispatcher(String ip, int port) {
-		this.ip = ip;
-		this.port = port;
-		this.username = "admin";
-		this.password = "admin";
+		configRabbitParms();
 		this.globalState = GlobalState.GLOBAL_IDLE;
 		this.globalMaxLoad = 0;
 		this.globalCurrentLoad = 0;
@@ -82,18 +85,54 @@ public class Dispatcher {
 		        .registerTypeAdapter(Service.class, new InterfaceSerializer(ServiceSuma.class))
 		        .create();
 		this.configureConnectionToRabbit();
-		this.loadNodeConfiguration();
+		
 		log.info(" RabbitMQ - Connection established");
-		this.purgeQueues();
-		threads = new HashMap<String,Thread>();
 
+		threads = new HashMap<String,Thread>();
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		try {
+			this.builder = factory.newDocumentBuilder();
+			this.documentNodes = builder.parse(new File(NODE_CONFIG_FILE));
+			this.documentNodes.getDocumentElement().normalize();
+			loadNodeConfigFromFile();
+			this.purgeQueues();
+			setValuesToDiccionario();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
+	
+	void configRabbitParms() {
+		try (InputStream input = new FileInputStream(RABBITMQ_CONFIG_FILE)) {
+            Properties prop = new Properties();
+            // load a properties file
+            prop.load(input);
+            this.ip = prop.getProperty("IP");
+            this.port = Integer.parseInt(prop.getProperty("PORT"));
+            this.username = prop.getProperty("USER");
+            this.password = prop.getProperty("PASS");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+	}
+	
+	void setValuesToDiccionario() {
+		DICCIONARIO = new ArrayList<>();
+		NodeList nd = documentNodes.getElementsByTagName("node");
+		for (int i = 0; i < nd.getLength(); i++) {
+			Element e = (Element) nd.item(i);
+			String name = e.getAttribute("id");
+		}
+	}
+	
 
 	/*CARGA CONFIGURACION RABBIT: Declara conexion, canal y colas que va a usar Dispatcher*/
 	private void configureConnectionToRabbit() {
 		try {
 			this.connectionFactory = new ConnectionFactory();
 			this.connectionFactory.setHost(this.ip);
+			this.connectionFactory.setPort(this.port);
 			this.connectionFactory.setUsername(this.username);
 			this.connectionFactory.setPassword(this.password);
 			this.queueConnection = this.connectionFactory.newConnection();
@@ -110,17 +149,25 @@ public class Dispatcher {
 		}
 	}
 
-	/*CARGA NODOS: Los que empezaran como activos, con una cola de proceso para cada nodo, la cual se llama igual que el nodo*/
-	private void loadNodeConfiguration() {
+	private void loadNodeConfigFromFile() {
 		try {
+			NodeList nd = documentNodes.getElementsByTagName("node");
 			nodosActivos = new ArrayList<Node>();
-			//empieza con tres nodos activos, luego ira llamando a los otros bajo demanda
-			nodosActivos.add(new Node("NodoA", "localhost", 8899, 20));
-			nodosActivos.add(new Node("NodoB", "localhost", 8890, 20));
-			nodosActivos.add(new Node("NodoC", "localhost", 8891, 20));
-			for (int i = 0; i < nodosActivos.size(); i++) {
-				nodosActivos.get(i).addService(new ServiceResta(0, "resta"));
-				nodosActivos.get(i).addService(new ServiceSuma(0, "suma"));
+			for (int i = 0; i < 3; i++) {
+				Element e = (Element) nd.item(i);
+				String name = e.getAttribute("id");
+				String ip = e.getElementsByTagName("ip").item(0).getTextContent();
+				int port = Integer.parseInt(e.getElementsByTagName("port").item(0).getTextContent());
+				int maxLoad = Integer.parseInt(e.getElementsByTagName("maxload").item(0).getTextContent());
+				nodosActivos.add(new Node(name, ip, port, maxLoad));
+				NodeList serv = e.getElementsByTagName("service");
+				for (int j = 0; j < serv.getLength(); j++) {
+					if (serv.item(j).getTextContent().equals("suma")) {
+						nodosActivos.get(i).addService(new ServiceSuma(0, serv.item(j).getTextContent()));
+					} else {
+						nodosActivos.get(i).addService(new ServiceResta(0, serv.item(j).getTextContent()));
+					}
+				}
 			}
 			for (Node node : nodosActivos) {
 				this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
@@ -145,6 +192,7 @@ public class Dispatcher {
 			this.queueChannel.queuePurge(this.GlobalStateQueueName);
 			this.queueChannel.queuePurge(this.notificationQueueName);
 			for (Node node : nodosActivos) {
+				log.info(node.getName());
 				this.queueChannel.queuePurge(node.getName());
 			}
 		} catch (IOException e) {
@@ -172,11 +220,11 @@ public class Dispatcher {
 			if (len < 0) throw new Exception("Servicio no disponible.");
 			len--;
 			i = (i + 1) % nodosActivos.size();
-		//} while (n.getNodeState().equals(NodeState.CRITICAL) && !n.hasService(name) );
+			//} while (n.getNodeState().equals(NodeState.CRITICAL) && !n.hasService(name) );
 		} while (!n.hasService(name) );
 		return n;
 	}
-	
+
 	public void setNodeByName(String name, Node n) {
 		boolean NotFound = true;
 		synchronized (nodosActivos) {
@@ -243,6 +291,26 @@ public class Dispatcher {
 			//queueChannel.basicPublish("", message.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, xString.getBytes("UTF-8"));
 		}
 	};
+	
+	private Node loadNewNodeConfig(String Name) {
+		Node n;
+		Element e = documentNodes.getElementById(Name);
+		String name = e.getAttribute("id");
+		String ip = e.getElementsByTagName("ip").item(0).getTextContent();
+		int port = Integer.parseInt(e.getElementsByTagName("port").item(0).getTextContent());
+		int maxLoad = Integer.parseInt(e.getElementsByTagName("maxload").item(0).getTextContent());
+		n = new Node(name, ip, port, maxLoad);
+		NodeList serv = e.getElementsByTagName("service");
+		for (int j = 0; j < serv.getLength(); j++) {
+			if (serv.item(j).getTextContent().equals("suma")) {
+				n.addService(new ServiceSuma(0, serv.item(j).getTextContent()));
+			} else {
+				n.addService(new ServiceResta(0, serv.item(j).getTextContent()));
+			}
+		}
+		return n;
+		
+	}
 
 	public void createNodos(int k) throws UnsupportedEncodingException, IOException {
 		String json = "{}";
@@ -283,7 +351,7 @@ public class Dispatcher {
 				decreaseGlobalMaxLoad(n.getMaxLoad());
 				decreaseGlobalCurrentLoad(n.getCurrentLoad());
 				synchronized (nodosActivos) {
-						nodosActivos.remove(n);
+					nodosActivos.remove(n);
 				}
 				this.queueChannel.queueDelete(n.getName());	
 				this.queueChannel.queueDelete(n.getName()+"inProcess");
@@ -333,7 +401,7 @@ public class Dispatcher {
 				default:
 					break;
 				}
-				
+
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
@@ -352,10 +420,10 @@ public class Dispatcher {
 		log.info(" [UPDATE_GLOBAL] CURR: " + getGlobalCurrentLoad() + " - MAX:" + getGlobalMaxLoad());
 		if (getGlobalCurrentLoad()  < ((int) getGlobalMaxLoad() * 0.2)) {
 			this.globalState = GlobalState.GLOBAL_IDLE;
-		// if GlobalCurrentLoad represents less than a 50% of GlobalLoad --> GlobalState is NORMAL
+			// if GlobalCurrentLoad represents less than a 50% of GlobalLoad --> GlobalState is NORMAL
 		} else if (getGlobalCurrentLoad() < ((int) getGlobalMaxLoad() * 0.5)) {
 			this.globalState = GlobalState.GLOBAL_NORMAL;
-		// if GlobalCurrentLoad represents less than a 80% of GlobalLoad --> GlobalState is ALERT
+			// if GlobalCurrentLoad represents less than a 80% of GlobalLoad --> GlobalState is ALERT
 		} else if (getGlobalCurrentLoad() < ((int) getGlobalMaxLoad() * 0.8)) {
 			this.globalState = GlobalState.GLOBAL_ALERT;
 			// if GlobalCurrentLoad represents more than a 80% of GlobalLoad --> GlobalState is CRITICAL
@@ -397,7 +465,7 @@ public class Dispatcher {
 		}
 		updateGlobal();
 	};
-	
+
 	public Channel getQueueChannel() {
 		return queueChannel;
 	}

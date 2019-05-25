@@ -1,10 +1,13 @@
-package punto3;
+package punto3.server;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
@@ -19,6 +22,7 @@ import com.rabbitmq.client.MessageProperties;
 
 public class ServerMain {
 	private final Logger log = LoggerFactory.getLogger(ServerMain.class);
+	public static final String RABBITMQ_CONFIG_FILE="src/main/java/punto3/resources/rabbitmq.properties";
 	private String username;
 	private String password;
 	private ConnectionFactory connectionFactory;
@@ -28,23 +32,39 @@ public class ServerMain {
 	private String outputQueueName;
 	private String ip;
 	private int port;
+	private String ipRabbit;
+	private int portRabbit;
 	private ServerSocket ss;
 	
 	public ServerMain(String ip, int port) {
-		this.ip = ip;
+		configRabbitParms();
 		this.port = port;
-		this.username = "admin";
-		this.password = "admin";
+		this.ip = ip;
 		this.inputQueueName = "inputQueue";
 		this.outputQueueName = "outputQueue";
 		this.configureConnectionToRabbit();
 		log.info(" RabbitMQ - Connection established");
 	}
 	
+	void configRabbitParms() {
+		try (InputStream input = new FileInputStream(RABBITMQ_CONFIG_FILE)) {
+            Properties prop = new Properties();
+            // load a properties file
+            prop.load(input);
+            this.ipRabbit = prop.getProperty("IP");
+            this.portRabbit = Integer.parseInt(prop.getProperty("PORT"));
+            this.username = prop.getProperty("USER");
+            this.password = prop.getProperty("PASS");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+	}
+	
 	private void configureConnectionToRabbit() {
 		try {
 			this.connectionFactory = new ConnectionFactory();
-			this.connectionFactory.setHost(this.ip);
+			this.connectionFactory.setHost(this.ipRabbit);
+			this.connectionFactory.setPort(this.portRabbit);
 			this.connectionFactory.setUsername(this.username);
 			this.connectionFactory.setPassword(this.password);
 			this.queueConnection = this.connectionFactory.newConnection();

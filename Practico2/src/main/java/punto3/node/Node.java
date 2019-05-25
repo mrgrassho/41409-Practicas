@@ -1,4 +1,4 @@
-package punto3;
+package punto3.node;
 
 import java.util.ArrayList;
 

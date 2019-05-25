@@ -1,4 +1,4 @@
-package punto3;
+package punto3.server;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -14,6 +14,8 @@ import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
+import punto3.core.Message;
+
 public class ThreadServer implements Runnable{
 	private Socket client;
 	private Channel queueChannel;
@@ -22,7 +24,7 @@ public class ThreadServer implements Runnable{
 	private Gson googleJson;
 	private Logger log;
 	private static final String EXCHANGE_NAME = "XCHNG-OUT";
-	
+
 	public ThreadServer(Socket client, Long routingKey, Channel queueChannel, String inputQueueName, Logger log) {
 		this.client = client;
 		this.routingKey = String.valueOf(routingKey);
@@ -37,8 +39,8 @@ public class ThreadServer implements Runnable{
 			System.out.println("");
 			ObjectOutputStream outputChannel = new ObjectOutputStream (this.client.getOutputStream());
 			ObjectInputStream inputChannel = new ObjectInputStream (this.client.getInputStream());
-			
-			this.queueChannel.queueDeclare(routingKey, true, false, false, null);	
+
+			this.queueChannel.queueDeclare(routingKey, true, false, true, null);
 			log.info("Thread Queue [" + routingKey + "] created.");
 			// Funcion que se ejecuta cada vez que hay un mensaje en la cola de salida disponible.
 			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
@@ -63,7 +65,7 @@ public class ThreadServer implements Runnable{
 			        break;
 			    }
 			}
-			
+
 		} catch (IOException e) {
 			log.info("Error1 -> ",e);
 			try {

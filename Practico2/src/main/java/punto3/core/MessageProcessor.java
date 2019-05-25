@@ -1,4 +1,4 @@
-package punto3;
+package punto3.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+
+import punto3.node.Node;
 
 public class MessageProcessor implements Runnable {
 	private Dispatcher dispatcher;

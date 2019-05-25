@@ -2,10 +2,10 @@
 
 ### Indice
 1. [Propuesta](#Propuesta)
-- [Dependencias](#Dependencias)
-- [Build & Run](#Build-&-Run)
-- [Scripts](#Scripts)
-- [Estado Desarrollo](#Estado-Desarrollo)
+2. [Dependencias](#Dependencias)
+3. [Build & Run](#Build-&-Run)
+4. [Scripts](#Scripts)
+5. [Estado Desarrollo](#Estado-Desarrollo)
 
 ### Propuesta
 
@@ -73,7 +73,9 @@ mvn install
 
 ### Build & Run
 
-1. Iniciar servicio de RabbitMQ
+1. Actualizar archivo configuración de cliente RabbitMQ en `Practico2/src/main/java/punto3/resources/rabbitmq.properties` con sus credenciales.
+
+- Iniciar servicio de RabbitMQ
 ```sh
 rabbitmq-server start
 ```
@@ -116,5 +118,5 @@ python3 ClientGenerator.py
 #### TO-DO:
 
 - [ ] Agregar script que tire nodos al azar.
-- [ ] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher).
-- [ ] Persistir Lista de Nodos Activos cada cierto timepo x (Para recurperarse en caso de caida del dispatcher).
+- [ ] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher). **[DONE]**
+- [ ] Persistir Lista de Nodos Activos cada cierto tiempo x (Para recurperarse en caso de caida del dispatcher).

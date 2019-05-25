@@ -1,4 +1,4 @@
-package punto3;
+package punto3.core;
 
 public enum GlobalState {
 	GLOBAL_IDLE,

@@ -1,0 +1,236 @@
+<nodes>
+    <node id="NodoA">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoB">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoC">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoD">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoE">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoF">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoG">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoH">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoI">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoJ">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoK">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoL">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoM">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoN">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoO">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoP">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoQ">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoR">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoS">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoT">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoU">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoV">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoW">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoX">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoY">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+    <node id="NodoZ">
+        <ip>'localhost'</ip>
+        <port>8000</port>
+        <services>
+        		<service	>resta</service>
+        		<service	>suma</service>
+		</services>
+		<maxload>20</maxload>
+    </node>
+</nodes>

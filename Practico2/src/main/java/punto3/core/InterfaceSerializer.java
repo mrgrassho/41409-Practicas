@@ -1,4 +1,4 @@
-package punto3;
+package punto3.core;
 
 import java.lang.reflect.Type;
 

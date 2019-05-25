@@ -1,4 +1,4 @@
-package punto3;
+package punto3.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +14,8 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 
 import com.google.gson.Gson;
+
+import punto3.core.Message;
 
 public class ClientTCP implements Runnable {
 	Socket s;
