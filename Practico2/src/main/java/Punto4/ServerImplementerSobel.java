@@ -21,7 +21,6 @@ public class ServerImplementerSobel implements RemoteInt {
 		{1, 2, 1}				
 	};
 	
-	@Override
 	public byte[] sobel(byte[] inImgBytes) throws IOException, InterruptedException {
 		BufferedImage inImg = ImageIO.read(new ByteArrayInputStream(inImgBytes));
 		int i, j;
@@ -55,9 +54,9 @@ public class ServerImplementerSobel implements RemoteInt {
 	        }
 	        
 
-		Gx = new float[600][601];
-		Gy = new float[600][601];
-		G = new float[600][601];
+		Gx = new float[width][height];
+		Gy = new float[width][height];
+		G = new float[width][height];
 
 		for (i = 0; i < width; i++) {
 			for (j = 0; j < height; j++) {
