@@ -26,7 +26,6 @@ public class DepositoThread implements Runnable {
 		this.gson = gson;
 	}
 
-	@Override
 	public void run() {
 		try {
 

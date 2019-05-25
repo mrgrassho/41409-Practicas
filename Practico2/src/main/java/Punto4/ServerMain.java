@@ -6,30 +6,41 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ServerMain {
 
-	public static void main(String[] args) {
-		
-		
-		try {
-			int port=80;
-			
-			ServerImplementerSobel si = new ServerImplementerSobel();
-			System.out.println("----- Implementador Sobel instanciado -----");
-			
-			Registry server = LocateRegistry.createRegistry(port);
-			System.out.println("----- Servicio RMI Iniciado -----");
-			
-			RemoteInt serviceSobel = (RemoteInt) UnicastRemoteObject.exportObject(si, 8000);
-			System.out.println("----- serviceSobel asociado a un puerto -----");
-			
-			server.rebind("sobelImageV1", serviceSobel);
-			System.out.println("----- bind de servicio JNDI realizado -----");
-			
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	private String ip;
+	private int port;
+	private int idServer;
+	private final static Logger log = LoggerFactory.getLogger(ServerMain.class);
+	
+	public ServerMain(int id, String ip, int port) {
+		this.ip = ip;
+		this.port = port;
+		this.idServer = id;
 	}
+	
+		public void startServer(String nameService, int portService) throws RemoteException {
+
+				log.info("Server ["+this.idServer+"] iniciado");
+			
+				ServerImplementerSobel si = new ServerImplementerSobel();
+				log.info("-----Server ["+this.idServer+"] Implementador Sobel instanciado -----");
+				
+				Registry server = LocateRegistry.createRegistry(this.port);
+				log.info("-----Server ["+this.idServer+"] Servicio RMI Iniciado en puerto "+this.port+"-----");
+				
+				RemoteInt serviceSobel = (RemoteInt) UnicastRemoteObject.exportObject(si, portService);
+				log.info("-----Server ["+this.idServer+"] serviceSobel asociado a puerto "+portService+" -----");
+				
+				server.rebind(nameService, serviceSobel);
+				log.info("-----Server ["+this.idServer+"] bind de servicio JNDI realizado -----");
+				
+				log.info("-----Server ["+this.idServer+"] proceso starServer finalizado correctamente.");
+		}
+		
+		
 
 }
