@@ -1,4 +1,4 @@
-package Punto4;
+package Punto4.withDownWorkers;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -22,7 +22,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-import Punto4.RemoteInt;
+import Punto4.withDownWorkers.RemoteInt;
 
 
 public class SobelClient {
@@ -168,8 +168,7 @@ public class SobelClient {
 		do {
 			System.out.println("MENU");
 			System.out.println("1. Sobel Local (a)");
-			System.out.println("2. Sobel Distribuido (b)");
-			System.out.println("3. Sobel Distribuido mejorado (c)");					
+			System.out.println("2. Sobel Distribuido mejorado (c)");					
 			System.out.println("0. Terminar");
 			System.out.println("Ingrese una opcion>");
 			Scanner scanner = new Scanner(System.in);

@@ -1,14 +1,27 @@
-package Punto4;
+package Punto4.withDownWorkers;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 
-public class ServerImplementerSobel implements RemoteInt {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DeliverCallback;
+import com.rabbitmq.client.MessageProperties;
+
+public class WorkerSobel {
     static int[][] sobel_x = new int[][]{
 		{-1, 0,1}, 
 		{-2, 0,2}, 
@@ -21,7 +34,53 @@ public class ServerImplementerSobel implements RemoteInt {
 		{1, 2, 1}				
 	};
 	
-	public byte[] sobel(byte[] inImgBytes) throws IOException, InterruptedException {
+	private final static Logger log = LoggerFactory.getLogger(WorkerSobel.class);
+	private int idWorker;
+	private Channel queueChannel;
+	private String queueName;
+	
+	
+	public WorkerSobel(int idWorker, Channel queueChannel) throws IOException {
+		log.info("============ WorkerSobel iniciado ==============");
+		this.idWorker = idWorker;
+		this.queueChannel = queueChannel;
+		startQueue();
+	}
+
+	
+	public void startQueue() throws IOException {
+		this.queueName = "QUEUE_W" + this.getIdWorker();
+		this.queueChannel.queueDeclare(this.queueName, true, false, false, null);
+		this.queueChannel.basicConsume(this.queueName, true, receivedInParcialImage, consumerTag -> {});
+		log.info("----- WorkerSobel "+this.idWorker +" creo la cola "+this.queueName +"-----");
+	}
+
+	
+	//public void deleteQueue() {	}
+	
+	
+	private DeliverCallback receivedInParcialImage = (consumerTag, delivery) -> {
+		try {
+			Gson googleJson = new Gson();
+			SobelRequest request = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), SobelRequest.class);
+			log.info("WorkerSobel " +this.idWorker +" leyo un mensaje de su cola.");
+	    
+			byte[] outParcialImg = sobel(request.getInParcialImg());
+			request.setOutImg(outParcialImg);
+			request.setState(StateSobelRequest.DONE);
+
+			String sResponse = googleJson.toJson(request);
+			this.queueChannel.basicPublish("", "QUEUE_SOBEL_OUT", MessageProperties.PERSISTENT_TEXT_PLAIN,sResponse.getBytes("UTF-8") );
+			log.info("WorkerSobel " +this.idWorker +" envio su respuesta a QUEUE_SOBEL_OUT.");
+		    
+		} catch (ClassNotFoundException | InterruptedException | NotBoundException e) {e.printStackTrace();}
+	};
+	
+	
+	public int getIdWorker() {return idWorker;}
+	public String getQueueName() {return queueName;}
+	
+	public byte[] sobel(byte[] inImgBytes) throws IOException, InterruptedException, NotBoundException, ClassNotFoundException {
 		BufferedImage inImg = ImageIO.read(new ByteArrayInputStream(inImgBytes));
 		int i, j;
 		int  max= 0, min=99999;
@@ -31,8 +90,8 @@ public class ServerImplementerSobel implements RemoteInt {
 		
 		int width = inImg.getWidth();
 		int height = inImg.getHeight();
-		System.out.println("W:" + width);
-		System.out.println("H:" + height);
+		//System.out.println("W:" + width);
+		//System.out.println("H:" + height);
 		float[] pixels = new float[(int) width * (int) height];
 		float[][] output = new float[(int) width][(int) height];
 		
@@ -90,7 +149,14 @@ public class ServerImplementerSobel implements RemoteInt {
 		ByteArrayOutputStream imgResult = new ByteArrayOutputStream();
 		ImageIO.write(outImg, "jpg", imgResult);
 		
+		
+		//int ms = (int)(Math.random()*10000);
+		//Thread.sleep(ms);
+		//System.out.println("Worker "+this.getIdWorker()+" durmio "+ms+" milisegundos");
+		
 		return imgResult.toByteArray();
 	}
+
+
 
 }

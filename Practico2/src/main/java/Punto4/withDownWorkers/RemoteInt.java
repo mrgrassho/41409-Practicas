@@ -1,4 +1,4 @@
-package Punto4;
+package Punto4.withDownWorkers;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -12,5 +12,4 @@ import java.util.ArrayList;
 public interface RemoteInt extends Remote{
 	
 	public byte[] sobelDistribuido (byte[] image) throws IOException, InterruptedException, NotBoundException, ClassNotFoundException;
-	public String proceso () throws IOException, InterruptedException;
 }
