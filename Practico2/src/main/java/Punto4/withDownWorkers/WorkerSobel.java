@@ -1,4 +1,4 @@
-package Punto4;
+package Punto4.withDownWorkers;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +39,7 @@ public class WorkerSobel {
 	private Channel queueChannel;
 	private String queueName;
 	
+	
 	public WorkerSobel(int idWorker, Channel queueChannel) throws IOException {
 		log.info("============ WorkerSobel iniciado ==============");
 		this.idWorker = idWorker;
@@ -46,15 +47,16 @@ public class WorkerSobel {
 		startQueue();
 	}
 
+	
 	public void startQueue() throws IOException {
 		this.queueName = "QUEUE_W" + this.getIdWorker();
 		this.queueChannel.queueDeclare(this.queueName, true, false, false, null);
 		this.queueChannel.basicConsume(this.queueName, true, receivedInParcialImage, consumerTag -> {});
-		System.out.println("----- WorkerSobel creo su cola "+this.queueName +"-----");
+		log.info("----- WorkerSobel "+this.idWorker +" creo la cola "+this.queueName +"-----");
 	}
 
 	
-	public void deleteQueue() {	}
+	//public void deleteQueue() {	}
 	
 	
 	private DeliverCallback receivedInParcialImage = (consumerTag, delivery) -> {
@@ -65,7 +67,8 @@ public class WorkerSobel {
 	    
 			byte[] outParcialImg = sobel(request.getInParcialImg());
 			request.setOutImg(outParcialImg);
-			
+			request.setState(StateSobelRequest.DONE);
+
 			String sResponse = googleJson.toJson(request);
 			this.queueChannel.basicPublish("", "QUEUE_SOBEL_OUT", MessageProperties.PERSISTENT_TEXT_PLAIN,sResponse.getBytes("UTF-8") );
 			log.info("WorkerSobel " +this.idWorker +" envio su respuesta a QUEUE_SOBEL_OUT.");
@@ -87,8 +90,8 @@ public class WorkerSobel {
 		
 		int width = inImg.getWidth();
 		int height = inImg.getHeight();
-		System.out.println("W:" + width);
-		System.out.println("H:" + height);
+		//System.out.println("W:" + width);
+		//System.out.println("H:" + height);
 		float[] pixels = new float[(int) width * (int) height];
 		float[][] output = new float[(int) width][(int) height];
 		
@@ -146,7 +149,14 @@ public class WorkerSobel {
 		ByteArrayOutputStream imgResult = new ByteArrayOutputStream();
 		ImageIO.write(outImg, "jpg", imgResult);
 		
+		
+		//int ms = (int)(Math.random()*10000);
+		//Thread.sleep(ms);
+		//System.out.println("Worker "+this.getIdWorker()+" durmio "+ms+" milisegundos");
+		
 		return imgResult.toByteArray();
 	}
+
+
 
 }

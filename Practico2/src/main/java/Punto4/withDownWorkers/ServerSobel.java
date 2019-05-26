@@ -1,15 +1,11 @@
-package Punto4;
+package Punto4.withDownWorkers;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.rmi.AccessException;
+import java.io.UnsupportedEncodingException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -33,27 +29,26 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.MessageProperties;
 
-import punto2.syn.with.DepositoThread;
-import punto3.core.Message;
-
 public class ServerSobel implements RemoteInt {
 
 	private String ip;
 	private int port;
 	private final static Logger log = LoggerFactory.getLogger(ServerSobel.class);
-	private Map<Integer, String> workersActivesQueues; // par PuertoWorker-> NombreCola 
+	private Map<Integer, String> workersActivesQueues; // par ID Worke r-> Nombre de su Cola 
 	private ArrayList<WorkerSobel> workers;
-	private Map<Integer,BufferedImage> finishedImgs; // par IdWorker -> ImagenSobel
-	private ConnectionFactory connectionFactory;
-	private Connection queueConnection;
+	private ArrayList<SobelRequest> workerRequests;
+	//private ConnectionFactory connectionFactory;
+	//private Connection queueConnection;
 	private Channel queueChannel;
     private String OutQueueName;
-	
+	private static final long maxWaitTime = 3000; // 3 segundos. 
+	private static final long periodWaitTime = 200; // 0.2 segundos. 
+    
 	public ServerSobel(String ip, int port, ArrayList<WorkerSobel> workers, Channel queueChannel) throws NotBoundException, IOException, InterruptedException {
 		this.port = port;
-		this.workersActivesQueues = new HashMap<Integer,String>();
 		this.workers= workers;
-		this.finishedImgs = new HashMap<Integer,BufferedImage>();
+		this.workersActivesQueues = new HashMap<Integer,String>();
+		this.workerRequests = new ArrayList<SobelRequest>();
 		this.OutQueueName = "QUEUE_SOBEL_OUT";
 		this.queueChannel = queueChannel;
 		this.startSobelRMIforClient();
@@ -70,14 +65,27 @@ public class ServerSobel implements RemoteInt {
 		} catch (IOException e) {e.printStackTrace();
 		}	
 	}
-	
+
 	private DeliverCallback receivedOutImages = (consumerTag, delivery) -> {
         Gson googleJson = new Gson();
 		SobelRequest response = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), SobelRequest.class);
-        System.out.println("ServerSobel agarro una imagen de la cola..");
-        
+        log.info("ServerSobel recibio una imagen del worker "+ response.getIdWorker());
         BufferedImage imgOut = ImageIO.read(new ByteArrayInputStream(response.getOutImg()));
-        this.finishedImgs.put(response.getIdWorker(),imgOut);
+        boolean find = false;
+        int i =0; int pos = -1;
+        // la encuentro en mi copia local de Requests para actualizarle estado y OutImg.
+        while ((i<this.workerRequests.size())&&(!find)) {
+        	if (this.workerRequests.get(i).getIdWorker()==response.getIdWorker()) {
+        		find = true;
+        		pos = i;
+        	}
+        	i++;
+        }
+        
+        if (find) {
+        	this.workerRequests.get(pos).setOutImg(response.getOutImg());
+        	this.workerRequests.get(pos).setState(response.getState());
+        }
     };
     
     
@@ -123,8 +131,9 @@ public class ServerSobel implements RemoteInt {
 		int w = inImg.getWidth(); 
 		int h = inImg.getHeight();
 		outImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+		
 		int qPart= 1;
-		while (qPart <= this.workers.size() ) {// una parte por cada worker
+		while (qPart <= this.workers.size() ) {// una parte de la imagen original por cada worker
 			int proxSectorSize = currentSector+(2*qSector);
 			if (proxSectorSize>inImg.getWidth()) {// cuando la division en partes entre los workers no da exacta, se asigna el resto al ultimo Worker
 				int proxSector = currentSector+qSector;
@@ -137,11 +146,8 @@ public class ServerSobel implements RemoteInt {
 			ByteArrayOutputStream inImgParam = new ByteArrayOutputStream();
 			ImageIO.write(inParcialImg, "jpg", inImgParam);
 			SobelRequest request = new SobelRequest(this.workers.get(currentWorker).getIdWorker(), inImgParam.toByteArray());
-			//envia a Worker 
-			Gson googleJson = new Gson();
-			String sRequest = googleJson.toJson(request);
-			this.queueChannel.basicPublish("", this.workersActivesQueues.get(currentWorker), MessageProperties.PERSISTENT_TEXT_PLAIN,sRequest.getBytes("UTF-8") );
-
+			sendImgToWorker(request);
+			this.workerRequests.add(request);
 			qPart++;
 			currentSector+= qSector;
 			currentWorker++;
@@ -155,46 +161,114 @@ public class ServerSobel implements RemoteInt {
 		
 		ByteArrayOutputStream imgResult = new ByteArrayOutputStream();
 		ImageIO.write(outImg, "jpg", imgResult);
-		
+		log.info("Resultado final de Sobel enviado al cliente (via RMI)");
 		return imgResult.toByteArray();
 	}
 	
 	
-	public BufferedImage joinImages(BufferedImage inImg) {	
+	public void sendImgToWorker(SobelRequest request) throws UnsupportedEncodingException, IOException {
+		//envia a Worker 
+		Gson googleJson = new Gson();
+		String sRequest = googleJson.toJson(request);
+		this.queueChannel.basicPublish("", this.workersActivesQueues.get(request.getIdWorker()), MessageProperties.PERSISTENT_TEXT_PLAIN,sRequest.getBytes("UTF-8") );
+		log.info("Parte sobel enviada a worker "+ request.getIdWorker());
+	}
+	
+	
+	public BufferedImage joinImages(BufferedImage inImg) throws IOException {
+		// cuando ya recibio todas las request con sus correspondientes imagenes Sobel.
+		log.info("Uniendo las imagenes sobel parciales... ");
 		int w = inImg.getWidth();
 		int h = inImg.getHeight();
 		BufferedImage outImg = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
 		Graphics unionImages = outImg.getGraphics();
 		int sectorSize = 0;
-		for (int i=0; i<this.workersActivesQueues.size();i++) {
-			unionImages.drawImage(this.finishedImgs.get(this.workers.get(i).getIdWorker()), sectorSize, 0, null);
-			sectorSize+=this.finishedImgs.get(this.workers.get(i).getIdWorker()).getWidth();
+		for (int i=0; i<this.workerRequests.size();i++) {
+			BufferedImage image = ImageIO.read(new ByteArrayInputStream(this.workerRequests.get(i).getOutImg()));
+			unionImages.drawImage(image, sectorSize, 0, null);
+			sectorSize+=image.getWidth();
 		}
 		return outImg;
 	}
 	
 
+	public int imagesReceived() {
+		int cont = 0;
+		for (int i = 0 ; i < this.workerRequests.size(); i++ ){
+			if (this.workerRequests.get(i).getState().equals(StateSobelRequest.DONE)) {cont++;}
+		}
+		log.info("Hay "+ cont + " imagenes recibidas de las "+this.workerRequests.size()+" enviadas");
+		return cont;
+	}
+	
+	
 	public void waitingImagesSobel() throws IOException, ClassNotFoundException, InterruptedException {
 		boolean salir = false;
+		long currentTimeWait = 0;
+		
 		while (!salir) {
-			System.out.println("largo de finishedImgs: " + this.finishedImgs.size());
-			if (this.finishedImgs.size()==this.workersActivesQueues.size()) {
-				System.out.println("finishedImgs ya tiene todas las partes de la imagen resueltas en sobel.");
+			if (imagesReceived()==this.workerRequests.size()) {// si llegaron todas las respuestas de los workers
+				log.info("Han llegado todas las partes de la imagen resueltas en sobel.");
 				salir = true;
+				
 			}else {
-				Thread.sleep(100);
+				if (maxWaitTime == currentTimeWait) {//si paso el maximo tiempo de espera para las respuestas
+					log.info("Se sobrepaso el teimpo maximo de espera.");
+					vefiryFallenWorkers();
+					currentTimeWait = 0;
+				}else {
+					currentTimeWait+= this.periodWaitTime; // aumento para la proxima entrada al while
+					Thread.sleep(this.periodWaitTime);
+				}
 			}
 		}
 
 	}
 
-	
-	public String proceso() throws IOException, InterruptedException {
-		return "procesoRMI en ServerSobel (Dispatcher) funcionando";
-	}
-
 		
-  //-----------------------------------------------------------------------------------------------------------------------//
+  private void vefiryFallenWorkers() throws IOException {
+	  //solo lo llamo cuando haya pasado el tiempo maximo de espera y no tengo todas las respuestas.
+	  log.info("Verificando Workers caidos...");
+	for (int i = 0 ; i<this.workerRequests.size(); i++) {
+		
+		if (this.workerRequests.get(i).getState().equals(StateSobelRequest.PENDENT)){
+			// elimino la cola correspondiente
+			 log.info("Worker " + this.workerRequests.get(i).getIdWorker() + " no envio su respuesta a tiempo. Reasignando tarea...");
+			log.info(this.workersActivesQueues.get(this.workerRequests.get(i).getIdWorker()) + " eliminada");
+			this.queueChannel.queueDelete(this.workersActivesQueues.get(this.workerRequests.get(i).getIdWorker()));
+			this.workersActivesQueues.remove(this.workerRequests.get(i).getIdWorker()); 
+			//reasigno la request a otro worker. Para eso agarro el primer Worker que encuentre que ya haya cumplido su tarea.
+			boolean reasigned = false;
+			do { // va a intentar asignarle un nuevo worker hasta que alguno quede ocioso.
+				int nextW = nextIdleWorker(this.workerRequests.get(i).getIdWorker());	
+				if (nextW!=-1) {
+					reasigned = true;
+					log.info(" Tarea reasignada a Worker "+ nextW );
+					this.workerRequests.get(i).setIdWorker(nextW);
+					sendImgToWorker(this.workerRequests.get(i));
+				}
+			}while (!reasigned);	
+		}
+	}
+  }		
+  
+  public int nextIdleWorker(int antWID) {
+	  boolean find = false;
+	  int i = 0;
+	  int wID = -1;
+	  while ((!find)&&(i<this.workerRequests.size())) { 
+		  if (this.workerRequests.get(i).getState().equals(StateSobelRequest.DONE) 
+		     && (this.workerRequests.get(i).getIdWorker()!=antWID)){// Worker ocioso, ya entrego su parte.
+			  		find = true;
+			  		wID = this.workerRequests.get(i).getIdWorker();
+		  }
+		  i++;
+	  }
+	  return wID;
+  }
+  
+
+//-----------------------------------------------------------------------------------------------------------------------//
  //-----------------------------------------------------------------------------------------------------------------------//
 	public static void main(String[] args) throws IOException, NotBoundException, InterruptedException, TimeoutException {
 		Logger log = LoggerFactory.getLogger(ServerSobel.class);
@@ -216,6 +290,8 @@ public class ServerSobel implements RemoteInt {
 			int portW = portInicialWorker + i;
 			WorkerSobel ws = new WorkerSobel(i, queueChannel);
 			workerList.add(ws);
+			//Thread tW = new Thread(ws);
+			//tW.start();
 		}
 		
 		System.out.println("");

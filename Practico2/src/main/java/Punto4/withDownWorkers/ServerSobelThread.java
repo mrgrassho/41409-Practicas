@@ -1,4 +1,4 @@
-package Punto4;
+package Punto4.withDownWorkers;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -56,6 +56,8 @@ public class ServerSobelThread implements Runnable{
 			Gson googleJson = new Gson();
 			String response = googleJson.toJson(request);
 			this.queueChannel.basicPublish("", this.queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,response.getBytes("UTF-8") );
+			
+			
 			/*grabo en carpeta el resultado
 			BufferedImage outParcialImg = ImageIO.read(new ByteArrayInputStream(imgResult));
 			String outputParcialPath = "images/sobelPart"+this.id+".JPG";
