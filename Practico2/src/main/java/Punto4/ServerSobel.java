@@ -5,6 +5,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -22,9 +26,13 @@ import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DeliverCallback;
+
+import punto2.syn.with.DepositoThread;
 
 public class ServerSobel implements RemoteInt {
 
@@ -33,16 +41,45 @@ public class ServerSobel implements RemoteInt {
 	private final static Logger log = LoggerFactory.getLogger(ServerSobel.class);
 	private Map<Integer, RemoteInt> workerConections; // par PuertoWorker-> RI 
 	private ArrayList<WorkerSobel> workers;
+	private ArrayList<BufferedImage> finishedImgs;
+	private ConnectionFactory connectionFactory;
+	private Connection queueConnection;
+	private Channel queueChannel;
+
 	
 	public ServerSobel(String ip, int port, ArrayList<WorkerSobel> workers) throws NotBoundException, IOException, InterruptedException {
 		this.port = port;
 		this.workerConections = new HashMap<Integer,RemoteInt>();
 		this.workers= workers;
+		this.finishedImgs = new ArrayList<BufferedImage>();
 		this.startSobelRMIforClient();
 		this.startWorkerConections();
+		configureConnectionToRabbit();
 	}
 	
+	private void configureConnectionToRabbit() {
+		try {
+			this.connectionFactory = new ConnectionFactory();
+			this.connectionFactory.setHost("localhost");
+			this.connectionFactory.setUsername("admin");
+			this.connectionFactory.setPassword("admin");
+			this.queueConnection = this.connectionFactory.newConnection();
+			this.queueChannel = this.queueConnection.createChannel();
+			this.queueChannel.queueDeclare("QUEUE_SOBEL", true, false, false, null);
+			this.queueChannel.basicConsume("QUEUE_SOBEL", true, recibirOutImages, consumerTag -> {});
+			
+		} catch (IOException e) {e.printStackTrace();
+		} catch (TimeoutException e) {e.printStackTrace();
+		}	
+	}
 	
+	private DeliverCallback recibirOutImages = (consumerTag, delivery) -> {
+        byte[] imgQueue = delivery.getBody();
+        System.out.println("ServerSobel agarro una imagen de la cola..");
+        BufferedImage imgOut = ImageIO.read(new ByteArrayInputStream(imgQueue));
+        this.finishedImgs.add(imgOut);
+    };
+    
 	private void startSobelRMIforClient() throws RemoteException {
 		
 		Registry server = LocateRegistry.createRegistry(this.port);
@@ -76,7 +113,7 @@ public class ServerSobel implements RemoteInt {
 	}
 	
 	
-	public byte[] sobelDistribuido(byte[] image) throws IOException, InterruptedException {
+	public byte[] sobelDistribuido(byte[] image) throws IOException, InterruptedException, NotBoundException, ClassNotFoundException {
 		log.info("--INGRESO A PROCESO 'SOBELDISTRIBUIDO' ENTRE CLIENTE Y SERVERSOBEL  --");
 		
 		BufferedImage inImg = ImageIO.read(new ByteArrayInputStream(image));// imagen que recibo de SobelClient
@@ -92,34 +129,28 @@ public class ServerSobel implements RemoteInt {
 		int w = inImg.getWidth(); 
 		int h = inImg.getHeight();
 		outImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-		Graphics unionImages = outImg.getGraphics();
 		int qParts= 0;
 		while (qParts < this.workers.size() ) {// una parte por cada worker
 			int proxSectorSize = currentSector+(2*qSector);
-			System.out.println("si "+proxSectorSize+" es mayor que "+inImg.getWidth()+"??");
 			if (proxSectorSize>inImg.getWidth()) {// cuando la division en partes entre los workers no da exacta, se asigna el resto al ultimo Worker
 				int proxSector = currentSector+qSector;
 			    int untilImageEnd = qSector+(inImg.getWidth() - proxSector);
-				System.out.println("Si es, entonces se avanza "+ untilImageEnd);
 			    inParcialImg = inImg.getSubimage(currentSector, inImg.getMinY(), untilImageEnd, inImg.getHeight()); //funcion para partir la imagen.			
 			}else {// caso normal
 				inParcialImg = inImg.getSubimage(currentSector, inImg.getMinY(), qSector, inImg.getHeight()); 
 			}
+			
+			SobelRequest request = new SobelRequest(this.workers.get(currentWorker).getIdWorker(),
+													this.workers.get(currentWorker).getPortRMI(), 
+													qSector, 
+													currentSector, 
+													inParcialImg,
+													workerConections.get(this.workers.get(currentWorker).getPortRMI()));
+			
+			ServerSobelThread sst = new ServerSobelThread(currentWorker,"QUEUE_SOBEL",this.queueChannel, request);
+			Thread sstThread = new Thread(sst);
+			sstThread.start();
 
-			//llamo al servicio por RMI
-			ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
-			ImageIO.write(inParcialImg, "jpg", imgSend);
-			byte[] imgResult = workerConections.get(this.workers.get(currentWorker).getPortRMI()).sobelDistribuido(imgSend.toByteArray());
-			outParcialImg = ImageIO.read(new ByteArrayInputStream(imgResult));
-			
-			/* guarda las imagenes partidas CON SOBEL
-			outputParcialPath = nameImage + "-SobelPart"+actualSector +extensionImage;
-			FileOutputStream outParcialFile = new FileOutputStream(outputParcialPath);
-			ImageIO.write(outParcialImg, "JPG", outParcialFile);
-			 */
-			
-			unionImages.drawImage(outParcialImg, currentSector, 0, null); 
-				
 			qParts++;
 			currentSector+= qSector;
 			currentWorker++;
@@ -128,6 +159,9 @@ public class ServerSobel implements RemoteInt {
 			}
 		}
 		
+		waitingImagesSobel();
+		outImg = joinImages(inImg);
+		
 		ByteArrayOutputStream imgResult = new ByteArrayOutputStream();
 		ImageIO.write(outImg, "jpg", imgResult);
 		
@@ -135,7 +169,33 @@ public class ServerSobel implements RemoteInt {
 	}
 	
 	
+	public BufferedImage joinImages(BufferedImage inImg) {	
+		int w = inImg.getWidth();
+		int h = inImg.getHeight();
+		BufferedImage outImg = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
+		Graphics unionImages = outImg.getGraphics();
+		int sectorSize = 0;
+		for (int i=0; i<this.finishedImgs.size();i++) {
+			unionImages.drawImage(this.finishedImgs.get(i), sectorSize, 0, null);
+			sectorSize+=this.finishedImgs.get(i).getWidth();
+		}
+		return outImg;
+	}
+	
 
+	public void waitingImagesSobel() throws IOException, ClassNotFoundException {
+		boolean salir = false;
+		while (!salir) {
+			System.out.println("largo de finishedImgs: " + this.finishedImgs.size());
+			if (this.finishedImgs.size()==this.workerConections.size()) {
+				System.out.println("finishedImgs ya tiene todas las partes de la imagen resuletas en sobel.");
+				salir = true;
+			}
+		}
+
+	}
+
+	
 	public String proceso() throws IOException, InterruptedException {
 		return "procesoRMI en ServerSobel (Dispatcher) funcionando";
 	}

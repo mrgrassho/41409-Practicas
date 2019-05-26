@@ -3,6 +3,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -61,7 +62,7 @@ public class WorkerSobel implements RemoteInt {
 		return "proceso RMI en Worker "+ this.getIdWorker()+" funcionando";
 	}
 	
-	public byte[] sobelDistribuido(byte[] inImgBytes) throws IOException, InterruptedException {
+	public byte[] sobelDistribuido(byte[] inImgBytes) throws IOException, InterruptedException, NotBoundException, ClassNotFoundException {
 		BufferedImage inImg = ImageIO.read(new ByteArrayInputStream(inImgBytes));
 		int i, j;
 		int  max= 0, min=99999;

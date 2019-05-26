@@ -35,7 +35,7 @@ public class SobelClient {
 	}
 	
 	
-	public String sobelCall(String pathImage, String tipoSobel) throws IOException, NotBoundException, InterruptedException, TimeoutException {		
+	public String sobelCall(String pathImage, String tipoSobel) throws IOException, NotBoundException, InterruptedException, TimeoutException, ClassNotFoundException {		
 
 		long start = System.currentTimeMillis(); // INICIO tiempo tarea
 		
@@ -153,7 +153,7 @@ public class SobelClient {
 	
 	//---------------------------------------------------------------------------------------------------------------------------------
 	
-	public static void main(String[] args) throws IOException, NotBoundException, InterruptedException, TimeoutException {
+	public static void main(String[] args) throws IOException, NotBoundException, InterruptedException, TimeoutException, ClassNotFoundException {
 
 		int portServer = 80;
 		SobelClient sobel1  = new SobelClient(portServer);

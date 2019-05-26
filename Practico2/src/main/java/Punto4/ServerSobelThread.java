@@ -1,13 +1,24 @@
 package Punto4;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
 
 import ch.qos.logback.classic.Logger;
 
@@ -18,54 +29,44 @@ public class ServerSobelThread implements Runnable{
 	private int portRMI;
 	private Logger log;
 	private SobelRequest request;
+	private ArrayList<BufferedImage> partsImg;
+
+	private String queueName;
+	private Channel queueChannel;
 	
-	public ServerSobelThread(int id, String ipRMI, int portRMI,String QueueRespones , SobelRequest request) throws UnknownHostException, IOException{
-		this.id = id;
-		this.ipRMI = ipRMI;
-		this.portRMI = portRMI;
+	public ServerSobelThread(int idT, String queueName,Channel queueChannel, SobelRequest request) throws NotBoundException, IOException, InterruptedException {
+		this.id = idT;
 		this.request = request;
+		this.queueName = queueName;
+		this.queueChannel = queueChannel;
 	}
 	
 	public void run() {
+		//llamo al servicio por RMI
+		try {
+			ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
+			ImageIO.write(this.request.getInParcialImg(), "jpg", imgSend);
+			byte[] imgResult = request.getRI().sobelDistribuido(imgSend.toByteArray());
+			BufferedImage outParcialImg = ImageIO.read(new ByteArrayInputStream(imgResult));
+	
+			this.queueChannel.basicPublish("", this.queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, imgResult);
+			
+			//grabo en carpeta el resultado
+			String outputParcialPath = "images/sobelPart"+this.id+".JPG";
+			FileOutputStream outParcialFile = new FileOutputStream(outputParcialPath);
+			ImageIO.write(outParcialImg, "JPG", outParcialFile);
+			System.out.println("Grabo imagen en el thread "+ this.id);
+			 
+		} catch (IOException e) {e.printStackTrace();
+		} catch (InterruptedException e) {e.printStackTrace();
+		} catch (NotBoundException e) {e.printStackTrace();
+		} catch (ClassNotFoundException e) {e.printStackTrace();
+		}
 		
+		
+
+		 
 	}
-	
-
-	/*
-	BufferedImage inImg;
-	
-	int sectorSiz
-	  getSubimage(actualSector, oriImg.getMinY(), imageEnd, oriImg.getHeight()); //funcion para partir la imagen.			
-	}else {// caso normal
-		inImg = oriImg.getSubimage(actualSector, oriImg.getMinY(), qSector, oriImg.getHeight()); 
-	}e= actualSector+qSector;
-	if (sectorSize>oriImg.getWidth()) {
-		int imageEnd = oriImg.getWidth() - sectorSize;
-		inImg = oriImg.
-	
-		ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
-		ImageIO.write(inImg, "JPG", imgSend);
-		byte[] imgPartResult = ri.sobel(imgSend.toByteArray());
-		outImg = ImageIO.read(new ByteArrayInputStream(imgPartResult));
-	*/
-	
-	/* PROBANDO UNION DE DOS IMAGENES. BORRAR LUEGO
-	  BufferedImage inImg1 = inImg.getSubimage(inImg.getMinX(), inImg.getMinY(), 300, 300);
-	BufferedImage inImg2 = inImg.getSubimage(inImg.getMinX(), inImg.getMinY(), 300, 300);
-	
-	int w = Math.max(image.getWidth(), overlay.getWidth()); 
-	int h = Math.max(image.getHeight(), overlay.getHeight());
-
-	BufferedImage ima = new BufferedImage();
-	Graphics g = ima.getGraphics(); 
-	g.drawImage(image, 0, 0, null); 
-	g.drawImage(overlay, 0, 0, null);*/
-	
-	//--------- proceso --------------------------
-	
-	// inImg = inImg.getSubimage(inImg.getMinX(), inImg.getMinY(), 300, 300); //funcion para partir la imagen.
-
-
 
 
 
