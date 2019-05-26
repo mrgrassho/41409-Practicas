@@ -33,6 +33,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
 import punto2.syn.with.DepositoThread;
+import punto3.core.Message;
 
 public class ServerSobel implements RemoteInt {
 
@@ -41,7 +42,7 @@ public class ServerSobel implements RemoteInt {
 	private final static Logger log = LoggerFactory.getLogger(ServerSobel.class);
 	private Map<Integer, RemoteInt> workerConections; // par PuertoWorker-> RI 
 	private ArrayList<WorkerSobel> workers;
-	private ArrayList<BufferedImage> finishedImgs;
+	private Map<Integer,BufferedImage> finishedImgs; // par IdWorker -> ImagenSobel
 	private ConnectionFactory connectionFactory;
 	private Connection queueConnection;
 	private Channel queueChannel;
@@ -51,7 +52,7 @@ public class ServerSobel implements RemoteInt {
 		this.port = port;
 		this.workerConections = new HashMap<Integer,RemoteInt>();
 		this.workers= workers;
-		this.finishedImgs = new ArrayList<BufferedImage>();
+		this.finishedImgs = new HashMap<Integer,BufferedImage>();
 		this.startSobelRMIforClient();
 		this.startWorkerConections();
 		configureConnectionToRabbit();
@@ -74,10 +75,14 @@ public class ServerSobel implements RemoteInt {
 	}
 	
 	private DeliverCallback recibirOutImages = (consumerTag, delivery) -> {
-        byte[] imgQueue = delivery.getBody();
+        //byte[] imgQueue = delivery.getBody();
+        Gson googleJson = new Gson();
+		SobelRequest response = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), SobelRequest.class);
         System.out.println("ServerSobel agarro una imagen de la cola..");
-        BufferedImage imgOut = ImageIO.read(new ByteArrayInputStream(imgQueue));
-        this.finishedImgs.add(imgOut);
+        
+        BufferedImage imgOut = ImageIO.read(new ByteArrayInputStream(response.getOutImg()));
+        this.finishedImgs.put(response.getIdWorker(),imgOut);
+        
     };
     
 	private void startSobelRMIforClient() throws RemoteException {
@@ -140,14 +145,15 @@ public class ServerSobel implements RemoteInt {
 				inParcialImg = inImg.getSubimage(currentSector, inImg.getMinY(), qSector, inImg.getHeight()); 
 			}
 			
+			ByteArrayOutputStream inImgParam = new ByteArrayOutputStream();
+			ImageIO.write(inParcialImg, "jpg", inImgParam);
 			SobelRequest request = new SobelRequest(this.workers.get(currentWorker).getIdWorker(),
 													this.workers.get(currentWorker).getPortRMI(), 
 													qSector, 
 													currentSector, 
-													inParcialImg,
-													workerConections.get(this.workers.get(currentWorker).getPortRMI()));
+													inImgParam.toByteArray());
 			
-			ServerSobelThread sst = new ServerSobelThread(currentWorker,"QUEUE_SOBEL",this.queueChannel, request);
+			ServerSobelThread sst = new ServerSobelThread(currentWorker,"QUEUE_SOBEL",this.queueChannel, request, workerConections.get(this.workers.get(currentWorker).getPortRMI()));
 			Thread sstThread = new Thread(sst);
 			sstThread.start();
 
@@ -175,20 +181,20 @@ public class ServerSobel implements RemoteInt {
 		BufferedImage outImg = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
 		Graphics unionImages = outImg.getGraphics();
 		int sectorSize = 0;
-		for (int i=0; i<this.finishedImgs.size();i++) {
-			unionImages.drawImage(this.finishedImgs.get(i), sectorSize, 0, null);
-			sectorSize+=this.finishedImgs.get(i).getWidth();
+		for (int i=0; i<this.workerConections.size();i++) {
+			unionImages.drawImage(this.finishedImgs.get(this.workers.get(i).getIdWorker()), sectorSize, 0, null);
+			sectorSize+=this.finishedImgs.get(this.workers.get(i).getIdWorker()).getWidth();
 		}
 		return outImg;
 	}
 	
 
-	public void waitingImagesSobel() throws IOException, ClassNotFoundException {
+	public void waitingImagesSobel() throws IOException, ClassNotFoundException, InterruptedException {
 		boolean salir = false;
 		while (!salir) {
 			System.out.println("largo de finishedImgs: " + this.finishedImgs.size());
 			if (this.finishedImgs.size()==this.workerConections.size()) {
-				System.out.println("finishedImgs ya tiene todas las partes de la imagen resuletas en sobel.");
+				System.out.println("finishedImgs ya tiene todas las partes de la imagen resueltas en sobel.");
 				salir = true;
 			}
 		}
