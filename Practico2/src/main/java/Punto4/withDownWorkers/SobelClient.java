@@ -18,6 +18,9 @@ import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -28,7 +31,8 @@ import Punto4.withDownWorkers.RemoteInt;
 public class SobelClient {
 				
 	private int portServer; //para el server que funciona como dispatcher entre los Worker. Sera el 80.
-				
+
+	private final static Logger log = LoggerFactory.getLogger(SobelClient.class);			
 	
 	public SobelClient(int portServer) {
 		this.portServer = portServer;
@@ -54,7 +58,7 @@ public class SobelClient {
 			resultImg = sobelLocal(inImg);
 		}else {
 			Registry clientRMI = LocateRegistry.getRegistry("localhost", this.portServer);
-			System.out.println("----- Cliente conectado a server principal en puerto "+this.portServer+"-----");
+			System.out.println("----- Cliente conectado a server en puerto "+this.portServer+"-----");
 			RemoteInt ri = (RemoteInt) clientRMI.lookup("sobelImagenes");
 			ByteArrayOutputStream imgSend = new ByteArrayOutputStream();
 			ImageIO.write(inImg, "jpg", imgSend);
@@ -66,12 +70,12 @@ public class SobelClient {
 		ImageIO.write(resultImg, "JPG", outResultFile);
 		
 		long end = System.currentTimeMillis();
-		System.out.println(" ELAPSED TIME: "+(end-start));
+		log.info(" ELAPSED TIME: "+(end-start));
 		return outputPath;
 	}			
 			
 	// -----------------------------------------------------------------------------------------------------
-	public BufferedImage sobelLocal(BufferedImage inImg) {
+	public BufferedImage sobelLocal(BufferedImage inImg) throws InterruptedException {
 	    int[][] sobel_x = new int[][]{
 			{-1, 0,1}, 
 			{-2, 0,2}, 
@@ -92,8 +96,8 @@ public class SobelClient {
 		
 		int width = inImg.getWidth();
 		int height = inImg.getHeight();
-		System.out.println("W:" + width);
-		System.out.println("H:" + height);
+		log.info("W:" + width);
+		log.info("H:" + height);
 		float[] pixels = new float[(int) width * (int) height];
 		float[][] output = new float[(int) width][(int) height];
 		
@@ -147,7 +151,7 @@ public class SobelClient {
 		
 		BufferedImage outImg = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 		outImg.getRaster().setPixels(0, 0, width, height, pixels);
-
+		Thread.sleep(500);
 		return outImg;
 	}
 	
@@ -157,12 +161,12 @@ public class SobelClient {
 
 		int portServer = 80;
 		SobelClient sobel1  = new SobelClient(portServer);
-		System.out.println("----- SobelClient iniciado -----");
+		log.info("----- SobelClient iniciado -----");
 				
-		//System.out.println("Ingrese la ruta de la imagen a modificar: ");
-		//Scanner scannerImage = new Scanner(System.in);
-		//String pathImage =  scannerImage.nextLine();
-		String pathImage = "images/pc1.jpg";  //Imagen existente en el proyecto. Descomentar esta linea y comentar las 3 anteriores para pruebas rapidas.
+		System.out.println("Ingrese la ruta de la imagen a modificar: ");
+		Scanner scannerImage = new Scanner(System.in);
+		String pathImage =  scannerImage.nextLine();
+		//String pathImage = "images/pc1.jpg";  //Imagen existente en el proyecto. Descomentar esta linea y comentar las 3 anteriores para pruebas rapidas.
 		
 		boolean salir= false;
 		do {
@@ -180,7 +184,7 @@ public class SobelClient {
 				pathResultado = sobel1.sobelCall(pathImage,"local");
 				if (pathResultado!=null) {
 					System.out.println("Se ha hecho la operacion exitosamente.");
-					System.out.println("La nueva imagen se ubica dentro del proyecto en la ruta: " + pathResultado);
+					log.info("La nueva imagen se ubica dentro del proyecto en la ruta: " + pathResultado);
 					salir=true;
 				}
 				break;
@@ -188,7 +192,7 @@ public class SobelClient {
 				pathResultado = sobel1.sobelCall(pathImage,"distribuido");
 				if (pathResultado!=null) {
 					System.out.println("Se ha hecho la operacion exitosamente.");
-					System.out.println("La nueva imagen se ubica dentro del proyecto en la ruta: " + pathResultado);
+					log.info("La nueva imagen se ubica dentro del proyecto en la ruta: " + pathResultado);
 					salir=true;
 				}
 				break;
