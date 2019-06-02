@@ -43,6 +43,7 @@ public class ServerSobel implements RemoteInt {
     private String OutQueueName;
 	private static final long maxWaitTime = 3000; // 3 segundos. 
 	private static final long periodWaitTime = 200; // 0.2 segundos. 
+	private static final int sizeBorderSobel = 1;
     
 	public ServerSobel(String ip, int port, ArrayList<WorkerSobel> workers, Channel queueChannel) throws NotBoundException, IOException, InterruptedException {
 		this.port = port;
@@ -70,8 +71,8 @@ public class ServerSobel implements RemoteInt {
         Gson googleJson = new Gson();
 		SobelRequest response = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), SobelRequest.class);
         log.info("ServerSobel recibio una imagen del worker "+ response.getIdWorker());
-        BufferedImage imgOut = ImageIO.read(new ByteArrayInputStream(response.getOutImg()));
-        boolean find = false;
+    	
+		boolean find = false;
         int i =0; int pos = -1;
         // la encuentro en mi copia local de Requests para actualizarle estado y OutImg.
         while ((i<this.workerRequests.size())&&(!find)) {
@@ -83,7 +84,26 @@ public class ServerSobel implements RemoteInt {
         }
         
         if (find) {
-        	this.workerRequests.get(pos).setOutImg(response.getOutImg());
+    	    BufferedImage imageOut = ImageIO.read(new ByteArrayInputStream(response.getOutImg()));// imagen resultado parcial CON LOS BORDES
+        	int w = imageOut.getWidth();
+    		int h = imageOut.getHeight();
+    		BufferedImage subImage = imageOut.getSubimage(this.sizeBorderSobel, imageOut.getMinY(),w-(this.sizeBorderSobel*2) , imageOut.getHeight());
+    	    
+    		/*Ejemplo:
+    		   Si 
+	    		   SizeBorderSobel = 10	
+	    		   imgIn Original = 80
+	    		   width imgOut (con bordes Sobel)= BorderIzq + 80 + BorderDer = 100  	
+	    	   Entonces SubImage imgOut = 
+	    		   						Ini X = 10
+	    		   						size X = 100-(10*2) = 80;    
+	    		   						0--10 -  IMAGEN ORIGINAL - 90--100 		 							
+    		 */
+    		
+			ByteArrayOutputStream outParcialImg = new ByteArrayOutputStream();
+			ImageIO.write(subImage, "jpg", outParcialImg);
+			
+        	this.workerRequests.get(pos).setOutImg(outParcialImg.toByteArray());
         	this.workerRequests.get(pos).setState(response.getState());
         }
     };
@@ -135,17 +155,23 @@ public class ServerSobel implements RemoteInt {
 		int qPart= 1;
 		while (qPart <= this.workers.size() ) {// una parte de la imagen original por cada worker
 			int proxSectorSize = currentSector+(2*qSector);
-			if (proxSectorSize>inImg.getWidth()) {// cuando la division en partes entre los workers no da exacta, se asigna el resto al ultimo Worker
+			int borderIzq=0;
+			// si no es el sector inicial> enviara una imagen mas grante para que el borde sobel no recorte parte de la imagen original
+			if (currentSector!=0) {
+				borderIzq = this.sizeBorderSobel;
+			}
+			if (proxSectorSize>inImg.getWidth()) {// cuando la division en partes entre los workers no da exacta, se asignara el resto al ultimo Worker
 				int proxSector = currentSector+qSector;
 			    int untilImageEnd = qSector+(inImg.getWidth() - proxSector);
-			    inParcialImg = inImg.getSubimage(currentSector, inImg.getMinY(), untilImageEnd, inImg.getHeight()); //funcion para partir la imagen.			
+			    inParcialImg = inImg.getSubimage(currentSector-borderIzq, inImg.getMinY(), untilImageEnd+(this.sizeBorderSobel), inImg.getHeight()); //funcion para partir la imagen.			
 			}else {// caso normal
-				inParcialImg = inImg.getSubimage(currentSector, inImg.getMinY(), qSector, inImg.getHeight()); 
+				inParcialImg = inImg.getSubimage(currentSector-borderIzq, inImg.getMinY(), qSector+(this.sizeBorderSobel*2), inImg.getHeight()); 
 			}
 			
 			ByteArrayOutputStream inImgParam = new ByteArrayOutputStream();
 			ImageIO.write(inParcialImg, "jpg", inImgParam);
 			SobelRequest request = new SobelRequest(this.workers.get(currentWorker).getIdWorker(), inImgParam.toByteArray());
+			
 			sendImgToWorker(request);
 			this.workerRequests.add(request);
 			qPart++;
@@ -178,7 +204,7 @@ public class ServerSobel implements RemoteInt {
 	public BufferedImage joinImages(BufferedImage inImg) throws IOException {
 		// cuando ya recibio todas las request con sus correspondientes imagenes Sobel.
 		log.info("Uniendo las imagenes sobel parciales... ");
-		int w = inImg.getWidth();
+		int w = inImg.getWidth();//-(this.sizeBorderSobel*2*this.workerRequests.size());
 		int h = inImg.getHeight();
 		BufferedImage outImg = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
 		Graphics unionImages = outImg.getGraphics();

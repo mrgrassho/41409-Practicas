@@ -87,8 +87,8 @@ public class WorkerSobel {
 		
 		int width = inImg.getWidth();
 		int height = inImg.getHeight();
-		System.out.println("W:" + width);
-		System.out.println("H:" + height);
+		//System.out.println("W:" + width);
+		//System.out.println("H:" + height);
 		float[] pixels = new float[(int) width * (int) height];
 		float[][] output = new float[(int) width][(int) height];
 		

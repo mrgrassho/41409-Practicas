@@ -47,7 +47,7 @@ public class SobelClient {
 		int pos = entryPath.indexOf(".");
 		String nameImage = entryPath.substring(0, pos);
 		String extensionImage = entryPath.substring(pos, entryPath.length());;		
-		String outputPath= nameImage + "-SobelResult"+ extensionImage;
+		String outputPath= nameImage + "-Sobel"+ extensionImage;
 		String outputParcialPath= "";
 		
 		FileInputStream inFile = new FileInputStream(entryPath);
@@ -144,14 +144,13 @@ public class SobelClient {
 		int counter1 = 0;
 		for (int yy = 0; yy < height; yy++) {
 			for (int xx = 0; xx < width; xx++) {
-				pixels[counter1] = (int) G[xx][yy];
-				counter1 = counter1 + 1;
+					pixels[counter1] = (int) G[xx][yy];
+					counter1 = counter1 + 1;
 			}
 		}
 		
 		BufferedImage outImg = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 		outImg.getRaster().setPixels(0, 0, width, height, pixels);
-		Thread.sleep(500);
 		return outImg;
 	}
 	
@@ -177,7 +176,7 @@ public class SobelClient {
 			System.out.println("Ingrese una opcion>");
 			Scanner scanner = new Scanner(System.in);
 			int op =  scanner.nextInt();
-			//int op = 1;
+			//int op = 2;
 			String pathResultado;
 			switch(op) {
 			case 1:

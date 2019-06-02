@@ -43,7 +43,7 @@ public class SobelClient {
 		int pos = entryPath.indexOf(".");
 		String nameImage = entryPath.substring(0, pos);
 		String extensionImage = entryPath.substring(pos, entryPath.length());;		
-		String outputPath= nameImage + "-SobelResult"+ extensionImage;
+		String outputPath= nameImage + "-Sobel"+ extensionImage;
 		String outputParcialPath= "";
 		
 		FileInputStream inFile = new FileInputStream(entryPath);
@@ -159,17 +159,16 @@ public class SobelClient {
 		SobelClient sobel1  = new SobelClient(portServer);
 		System.out.println("----- SobelClient iniciado -----");
 				
-		//System.out.println("Ingrese la ruta de la imagen a modificar: ");
-		//Scanner scannerImage = new Scanner(System.in);
-		//String pathImage =  scannerImage.nextLine();
-		String pathImage = "images/pc1.jpg";  //Imagen existente en el proyecto. Descomentar esta linea y comentar las 3 anteriores para pruebas rapidas.
+		System.out.println("Ingrese la ruta de la imagen a modificar: ");
+		Scanner scannerImage = new Scanner(System.in);
+		String pathImage =  scannerImage.nextLine();
+		//String pathImage = "images/pc1.jpg";  //Imagen existente en el proyecto. Descomentar esta linea y comentar las 3 anteriores para pruebas rapidas.
 		
 		boolean salir= false;
 		do {
 			System.out.println("MENU");
 			System.out.println("1. Sobel Local (a)");
-			System.out.println("2. Sobel Distribuido (b)");
-			System.out.println("3. Sobel Distribuido mejorado (c)");					
+			System.out.println("2. Sobel Distribuido (b)");				
 			System.out.println("0. Terminar");
 			System.out.println("Ingrese una opcion>");
 			Scanner scanner = new Scanner(System.in);
