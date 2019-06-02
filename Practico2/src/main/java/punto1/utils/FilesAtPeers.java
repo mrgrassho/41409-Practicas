@@ -6,7 +6,7 @@ import java.util.Set;
 public class FilesAtPeers {
 	private String checksum;
 	private String name;
-	private Set<Peer> peers;
+	private Set<Seeder> peers;
 
 	public FilesAtPeers(String checksum, String name) {
 		this.setChecksum(checksum);
@@ -14,11 +14,11 @@ public class FilesAtPeers {
 		peers = new HashSet<>();
 	}
 	
-	public void addPeer(Peer p) {
+	public void addPeer(Seeder p) {
 		peers.add(p);
 	}
 	
-	public void delPeer(Peer p) {
+	public void delPeer(Seeder p) {
 		peers.remove(p);
 	}
 
@@ -35,7 +35,7 @@ public class FilesAtPeers {
 	}
 
 	
-	public Set<Peer> getPeers() {
+	public Set<Seeder> getPeers() {
 		return peers;
 	}
 	

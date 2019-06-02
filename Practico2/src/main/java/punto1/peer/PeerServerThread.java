@@ -20,7 +20,7 @@ import com.google.gson.reflect.TypeToken;
 
 import punto1.utils.FilesAtPeers;
 import punto1.utils.Message;
-import punto1.utils.Peer;
+import punto1.utils.Seeder;
 import punto1.utils.StoredFile;
 
 public class PeerServerThread implements Runnable {
@@ -72,6 +72,8 @@ public class PeerServerThread implements Runnable {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (SocketException s) {
+			s.printStackTrace();
 		}
 	}
 

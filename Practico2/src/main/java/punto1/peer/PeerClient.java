@@ -15,6 +15,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -31,7 +32,7 @@ import com.google.gson.stream.JsonReader;
 
 import punto1.utils.Master;
 import punto1.utils.Message;
-import punto1.utils.Peer;
+import punto1.utils.Seeder;
 import punto1.utils.PeerException;
 import punto1.utils.StoredFile;
 
@@ -63,7 +64,7 @@ public class PeerClient implements Runnable{
 			JsonReader br;
 			br = new JsonReader(new FileReader(MASTER_INFO));
 			masters = null;
-			if (br.hasNext()) {
+			if (br != null) {
 				masters = gson.fromJson(br, SET_MASTER_TYPE);
 			}
 			br = new JsonReader(new FileReader(LOCAL_FILES_INFO));
@@ -76,7 +77,7 @@ public class PeerClient implements Runnable{
 			br.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			System.err.println("El archivo NO existe.");
+			System.out.println("El archivo NO existe.");
 		} catch (JsonIOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -127,11 +128,18 @@ public class PeerClient implements Runnable{
 	}
 
 	public void addFileToShare(StoredFile f) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(LOCAL_FILES_INFO));
+		JsonReader br = new JsonReader(new FileReader(LOCAL_FILES_INFO));
 		FileWriter wr = new FileWriter(LOCAL_FILES_INFO);
+		Set<StoredFile> fp = new HashSet<>();
 		// Process
-		if (br.ready() ) {
-			Set<StoredFile> fp = gson.fromJson(br, new TypeToken<Set<StoredFile>>(){}.getType());
+		if (br != null) {
+			System.out.println(" [+] Leyendo archivos ya declarados...");
+			fp = gson.fromJson(br, SET_STOREDFILE_TYPE);
+		}
+		fp = (fp == null)?new HashSet<>():fp;
+		System.out.println(gson.toJson(fp));
+		if (!fp.contains(f)) {
+			System.out.println(" [+] Agregando "+ f.getName() +", SHA-256:"+f.getChecksum());
 			fp.add(f);
 			String str = gson.toJson(fp);
 			wr.write(str);
@@ -142,24 +150,21 @@ public class PeerClient implements Runnable{
 
 	public void showFilesToShare() throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(LOCAL_FILES_INFO));
-		FileWriter wr = new FileWriter(LOCAL_FILES_INFO);
 		// Process
-		Set<StoredFile> fp = gson.fromJson(br, new TypeToken<Set<StoredFile>>(){}.getType());
+		Set<StoredFile> fp = gson.fromJson(br, SET_STOREDFILE_TYPE);
+		System.out.println("\t[      SHA-256 (Reduced)       ]\t\t[      FILENAME      ]");
 		for (StoredFile storedFile : fp) {
-			System.out.println("-> NAME:"+storedFile.getName() +" | MD5_CHECKSUM:" + storedFile.getChecksum());
+			System.out.println("\t"+storedFile.getChecksum().substring(0, 32) +"\t\t"+storedFile.getName());
 		}
-		String str = gson.toJson(fp);
-		wr.write(str);
-		wr.close();
 		br.close();
 	}
 
 	public void delFileToShare(StoredFile f) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(LOCAL_FILES_INFO));
+		JsonReader br = new JsonReader(new FileReader(LOCAL_FILES_INFO));
 		FileWriter wr = new FileWriter(LOCAL_FILES_INFO);
 		// Process
-		if (br.ready() ) {
-			Set<StoredFile> fp = gson.fromJson(br, new TypeToken<Set<StoredFile>>(){}.getType());
+		if (br != null) {
+			Set<StoredFile> fp = gson.fromJson(br, SET_STOREDFILE_TYPE);
 			fp.remove(f);
 			String str = gson.toJson(fp);
 			wr.write(str);
@@ -170,23 +175,23 @@ public class PeerClient implements Runnable{
 
 	public void announce() throws IOException {
 		Message m = new Message("announce");
-		
+
 		String fileChcks = extractFileChecksums(storedFiles);
 		String fileNames = extractFileNames(storedFiles);
 		if (fileChcks != "" && fileNames != "") {
 			String[] arr1 = fileChcks.split(",");
 			String[] arr2 = fileNames.split(",");
 			System.out.println("Anunciando al master (archivos):");
-			System.out.println("\t[  MD5  ]\t[      FILENAME      ]");
+			System.out.println("\t[      SHA-256 (Reduced)       ]\t\t[      FILENAME      ]");
 			for (int i = 0; i < arr2.length; i++) {
-				System.out.println("\t"+arr1[i].substring(0, 8) + "\t" + arr2[i]);
+				System.out.println("\t"+arr1[i].substring(0, 32) + "\t\t" + arr2[i]);
 			}
 			m.setParametro("file-checksums", fileChcks);
 			m.setParametro("file-names", fileNames);
 			m.setParametro("port", String.valueOf(portPeerServer));
 			m.setParametro("ip", String.valueOf(ipPeerServer));
 			String json = gson.toJson(m);
-			this.outputChannel.print(json);
+			outputChannel.println(json);
 			json = this.inputChannel.readLine();
 			Message msg = gson.fromJson(json, Message.class);
 			log.info(" " + msg.getParametro("ack"));
@@ -195,12 +200,12 @@ public class PeerClient implements Runnable{
 		}
 	}
 
-	private Set<Peer> findPeerWithFile(String name) throws IOException{
+	private Set<Seeder> findPeerWithFile(String name) throws IOException{
 		return findPeerWithFile(name, null);
 	}
 
-	private Set<Peer> findPeerWithFile(String name, String chksum) throws IOException{
-		Message m = new Message("find");
+	private Set<Seeder> findPeerWithFile(String name, String chksum) throws IOException{
+		Message m = new Message("find-peer-with-file");
 		if (name != null) m.setParametro("name", name);
 		if (chksum != null) m.setParametro("checksum", chksum);
 		String json = gson.toJson(m);
@@ -208,20 +213,20 @@ public class PeerClient implements Runnable{
 		json = inputChannel.readLine();
 		Message message = gson.fromJson(json, Message.class);
 		String[] peerId;
-		Set<Peer> s = new HashSet<>();
+		Set<Seeder> s = new HashSet<>();
 		if (message.getParametro("peers") != null) { 
 			peerId = message.getParametro("peers").split(",");
 			for (String str : peerId) {
 				String ip = str.split(":")[0];
 				String port = str.split(":")[1];
-				s.add(new Peer(ip, port));
+				s.add(new Seeder(ip, port));
 			}
 		}
 		return s;
 	}
-	
-	private void findFiles(String name) throws IOException{
-		Message m = new Message("find");
+
+	private void findFilesAtPeer(String name) throws IOException{
+		Message m = new Message("find-files-at-peer");
 		if (name != null) m.setParametro("name", name);
 		String json = gson.toJson(m);
 		outputChannel.println(json);
@@ -229,22 +234,23 @@ public class PeerClient implements Runnable{
 		Message message = gson.fromJson(json, Message.class);
 		String[] fileNames;
 		String[] chcks;
-		Set<Peer> s = new HashSet<>();
+		Set<Seeder> s = new HashSet<>();
 		if (message.getParametro("file-names") != null) { 
 			fileNames = message.getParametro("file-names").split(",");
 			chcks = message.getParametro("file-checksums").split(",");
 			System.out.println("Archivos disponibles para descargar: ");
-			System.out.println("\t[  MD5  ]\t[      FILENAME      ]");
+			System.out.println("\t[                     SHA-256                                  ]\t\t[      FILENAME      ]");
 			for (int i = 0; i < fileNames.length; i++) {
-				System.out.println("\t"+fileNames[i].substring(0, 8) + "\t" + chcks[i]);
+				String chk = (chcks[i].length() > 8) ? chcks[i].substring(0, 8): chcks[i];
+				System.out.println("\t"+ chcks[i] + "\t\t" + fileNames[i]);
 			}
 		}
 	}
 
 
-	public void downloadFile(String pathname, Peer peer) throws ConnectException, NumberFormatException, UnknownHostException, IOException, PeerException {
+	public void downloadFile(String pathname, Seeder peer) throws ConnectException, NumberFormatException, UnknownHostException, IOException, PeerException {
 		Socket s = new Socket(peer.getIp(), Integer.parseInt(peer.getPort()));
-		
+
 		BufferedReader inPeer = new BufferedReader (new InputStreamReader (s.getInputStream()));
 		PrintWriter outputPeer = new PrintWriter (s.getOutputStream(),true);
 
@@ -252,7 +258,7 @@ public class PeerClient implements Runnable{
 		Message m = new Message("get-file");
 		m.setParametro("name", pathname);
 		String json = gson.toJson(m);
-		outputPeer.print(json);
+		outputPeer.println(json);
 		if (s.isConnected()) {
 			try {
 				InputStream in = s.getInputStream();
@@ -280,7 +286,8 @@ public class PeerClient implements Runnable{
 		System.out.println();
 		System.out.println("Opciones sobre Red P2P:\n");
 		System.out.println("\tdownload [filename]\t\tDescarga archivos por nombre o checksum.");
-		System.out.println("\tfind [*|filename|chksum]\t\tBusca archivos por nombre o checksum.");
+		System.out.println("\tfind [filename|chksum]\t\tBusca archivos por nombre o checksum.");
+		System.out.println("\tlist-files [peerId|*]\t\tLista todos los archivos que tiene un Seeder.");
 		System.out.println("\nOpciones para administrar archivos (locales) a compartir sobre red P2P:\n");
 		System.out.println("\tadd [path-file]\t\t\tAgrega el archivo a la lista de archivos compartidos.");
 		System.out.println("\tdelete [path-file]\t\tBorra el archivo de la lista de archivos compartidos.");
@@ -298,17 +305,19 @@ public class PeerClient implements Runnable{
 	public void end() throws IOException {
 	}
 
-	public void interpretCmd(String line) throws Exception  {
+	public void interpretCmd(String line) throws PeerException, IOException, InterruptedException, NoSuchAlgorithmException  {
 		String[] args = splitArgs(line);
 		String command = args[0];
 		if (command.equals("download")) {
+			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
 			String filename = args[1];
-			Set<Peer> set = findPeerWithFile(filename);
-			Peer[] p = set.toArray(new Peer[set.size()]);
+			Set<Seeder> set = findPeerWithFile(filename);
+			Seeder[] p = set.toArray(new Seeder[set.size()]);
 			boolean downloadOk = false;
 			int i = 0;
 			int intento = 0;
 			if (p.length > 0) {
+				System.out.println(" [+] Archivo: '"+filename+"' fue encontrado en "+p.length +" Peer/s");
 				while (!downloadOk) {
 					try {
 						if (intento++ > TRYS_IN_PEER) {
@@ -318,12 +327,12 @@ public class PeerClient implements Runnable{
 						downloadFile(filename, p[i]);
 						downloadOk = true;
 					} catch (PeerException e) {
-						System.err.println(" [!] Error en la descarga. Intentando con Peer:" + p[i].getPeerId());
+						System.out.println(" [!] Error en la descarga. Intentando con Peer:" + p[i].getPeerId());
 						i++;
 						if (i==p.length) break;
 						Thread.sleep(RETRY_SLEEP_INTERVAL);
 					} catch (ConnectException e) {
-						System.err.println(" [!] No se pudo conectar. Peer ("+p[i].getPeerId()+") caido!");
+						System.out.println(" [!] No se pudo conectar. Peer ("+p[i].getPeerId()+") caido!");
 						i++;
 						if (i==p.length) break;
 						Thread.sleep(RETRY_SLEEP_INTERVAL);
@@ -335,32 +344,49 @@ public class PeerClient implements Runnable{
 				System.out.println(" [!] No se encontró el archivo especificado.");
 			}
 		} else if (command.equals("find")) {
-
-		}else if (command.equals("add")) {
+			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
+			String filename = args[1];
+			Set<Seeder> set = findPeerWithFile(filename);
+			Seeder[] p = set.toArray(new Seeder[set.size()]);
+			if (p.length > 0) {
+				System.out.println(" [+] Seeders que tienen el archivo: ");
+				for (int i = 0; i < p.length; i++) {
+					System.out.println("\t" + p[i].getPeerId());
+				}
+			} else {
+				System.out.println(" [!] No se encontró el archivo especificado.");
+			}
+		} else if (command.equals("list-files")) {
+			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
+			String peer = args[1];
+			findFilesAtPeer(peer);
+		} else if (command.equals("add")) {
+			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
 			String pathname = args[1];
 			try {
 				addFileToShare(new StoredFile(pathname));
 			} catch (IOException e) {
-				System.out.println("El archivo especifado no existe.");
+				System.out.println(" [!] El archivo especifado no existe.");
 			}
 		}else if (command.equals("del")) {
+			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
 			String pathname = args[1];
 			try {
 				delFileToShare(new StoredFile(pathname));
 			} catch (IOException e) {
-				System.out.println("El archivo especifado no existe.");
+				System.out.println(" [!] El archivo especifado no existe.");
 			}
 		} else if (command.equals("show-files")) {
 			showFilesToShare();
 		} else if (command.equals("help")) {
 			menuCli();
 		} else if (command.equals("exit")) {
-			throw new Exception("Ha salido correctamente.");
+			throw new PeerException(" [+] Ha salido correctamente.");
 		} else {
-			System.err.println("Opcion incorrecta!");
+			System.out.println("Opcion incorrecta!");
 		}
 	}
-	
+
 	void startClient() {
 		try {
 			this.announce();
@@ -368,12 +394,19 @@ public class PeerClient implements Runnable{
 			System.out.println("Ingrese - help - para ver las opciones.");
 			while(true) {
 				System.out.print("> ");
-				this.interpretCmd(scanner.nextLine());
+				try {
+					this.interpretCmd(scanner.nextLine());
+				}  catch (PeerException e) {
+					System.out.println(e.getMessage());
+					if (e.getMessage().equals(" [+] Ha salido correctamente.")) break;
+				} catch (Exception f) {
+					System.out.println(f.getMessage());
+				}
 			}
-		} catch (ConnectException e) {
-			System.err.println(" [!] No se pudo conectar, Master caido!");
+		//} catch (ConnectException e) {
+		//	System.out.println(" [!] No se pudo conectar, Master caido!");
 		} catch (Exception f) {
-			System.err.println(f);
+			System.out.println(f);
 		}
 	}
 
