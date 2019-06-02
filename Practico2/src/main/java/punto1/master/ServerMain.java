@@ -3,7 +3,6 @@ package punto1.master;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +26,15 @@ public class ServerMain {
 		try {
 			ServerSocket ss = new ServerSocket (this.port);
 			log.info("Server started on " + this.port);
-			Random r = new Random();
-			while (true) {
+			boolean flag = true;
+			while (flag) {
 				Socket client = ss.accept();
 				log.info("Client connected from " + client.getInetAddress().getCanonicalHostName()+":"+client.getPort());
 				ServerThread ts = new ServerThread(log, gson, client, PEERS_INFO, FILES_INFO);
 				Thread tsThread = new Thread(ts);
 				tsThread.start();
 			}
+			ss.close();
 		} catch (IOException e) {
 			log.info("Port in use!");
 		}

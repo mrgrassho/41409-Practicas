@@ -13,23 +13,19 @@ public class StoredFile {
 	private String name;
 	private String pathname;
 
-	public StoredFile(String pathname) {
+	public StoredFile(String pathname) throws NoSuchAlgorithmException, IOException {
 		String[] f = pathname.split("/");
 		this.setName(f[f.length-1]);
 		this.setPathname(pathname);
 		this.setChecksum(calculateChecksum(pathname));
 	}
 
-	private String calculateChecksum(String pathname) {
+	private String calculateChecksum(String pathname) throws NoSuchAlgorithmException, IOException {
 		MessageDigest md = null;
 		DigestInputStream dis = null;
-		try {
-			md = MessageDigest.getInstance("MD5");
-			InputStream is = Files.newInputStream(Paths.get(pathname));
-			dis = new DigestInputStream(is, md);
-		} catch (NoSuchAlgorithmException | IOException e) {
-			e.printStackTrace();
-		}
+		md = MessageDigest.getInstance("MD5");
+		InputStream is = Files.newInputStream(Paths.get(pathname));
+		dis = new DigestInputStream(is, md);
 		return dis.getMessageDigest().digest().toString();
 	}
 
