@@ -1,6 +1,7 @@
 package punto1.peer;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -29,6 +31,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 import punto1.utils.Master;
 import punto1.utils.Message;
@@ -128,8 +131,8 @@ public class PeerClient implements Runnable{
 	}
 
 	public void addFileToShare(StoredFile f) throws IOException {
-		JsonReader br = new JsonReader(new FileReader(LOCAL_FILES_INFO));
-		FileWriter wr = new FileWriter(LOCAL_FILES_INFO);
+		JsonReader br = new JsonReader(new BufferedReader(new FileReader(LOCAL_FILES_INFO)));
+		JsonWriter wr = new JsonWriter(new BufferedWriter(new FileWriter(LOCAL_FILES_INFO)));
 		Set<StoredFile> fp = new HashSet<>();
 		// Process
 		if (br != null) {
@@ -142,7 +145,7 @@ public class PeerClient implements Runnable{
 			System.out.println(" [+] Agregando "+ f.getName() +", SHA-256:"+f.getChecksum());
 			fp.add(f);
 			String str = gson.toJson(fp);
-			wr.write(str);
+			wr.jsonValue(str);
 		}
 		wr.close();
 		br.close();
@@ -152,9 +155,9 @@ public class PeerClient implements Runnable{
 		BufferedReader br = new BufferedReader(new FileReader(LOCAL_FILES_INFO));
 		// Process
 		Set<StoredFile> fp = gson.fromJson(br, SET_STOREDFILE_TYPE);
-		System.out.println("\t[      SHA-256 (Reduced)       ]\t\t[      FILENAME      ]");
+		System.out.println("\t[                     SHA-256                                  ]\t\t[      FILENAME      ]");
 		for (StoredFile storedFile : fp) {
-			System.out.println("\t"+storedFile.getChecksum().substring(0, 32) +"\t\t"+storedFile.getName());
+			System.out.println("\t"+storedFile.getChecksum() +"\t\t"+storedFile.getName());
 		}
 		br.close();
 	}
@@ -182,9 +185,9 @@ public class PeerClient implements Runnable{
 			String[] arr1 = fileChcks.split(",");
 			String[] arr2 = fileNames.split(",");
 			System.out.println("Anunciando al master (archivos):");
-			System.out.println("\t[      SHA-256 (Reduced)       ]\t\t[      FILENAME      ]");
+			System.out.println("\t[                     SHA-256                                  ]\t\t[      FILENAME      ]");
 			for (int i = 0; i < arr2.length; i++) {
-				System.out.println("\t"+arr1[i].substring(0, 32) + "\t\t" + arr2[i]);
+				System.out.println("\t"+arr1[i] + "\t\t" + arr2[i]);
 			}
 			m.setParametro("file-checksums", fileChcks);
 			m.setParametro("file-names", fileNames);
@@ -200,8 +203,12 @@ public class PeerClient implements Runnable{
 		}
 	}
 
-	private Set<Seeder> findPeerWithFile(String name) throws IOException{
+	private Set<Seeder> findPeerWithFileByName(String name) throws IOException{
 		return findPeerWithFile(name, null);
+	}
+	
+	private Set<Seeder> findPeerWithFileByChecksum(String chksum) throws IOException{
+		return findPeerWithFile(null, chksum);
 	}
 
 	private Set<Seeder> findPeerWithFile(String name, String chksum) throws IOException{
@@ -248,21 +255,24 @@ public class PeerClient implements Runnable{
 	}
 
 
-	public void downloadFile(String pathname, Seeder peer) throws ConnectException, NumberFormatException, UnknownHostException, IOException, PeerException {
+	public void downloadFile(String pathname, String destinationFolder, Seeder peer) throws ConnectException, NumberFormatException, UnknownHostException, IOException, PeerException {
 		Socket s = new Socket(peer.getIp(), Integer.parseInt(peer.getPort()));
-
 		BufferedReader inPeer = new BufferedReader (new InputStreamReader (s.getInputStream()));
 		PrintWriter outputPeer = new PrintWriter (s.getOutputStream(),true);
-
 		// Comunicarse con el Peer con el comando GET
 		Message m = new Message("get-file");
 		m.setParametro("name", pathname);
 		String json = gson.toJson(m);
 		outputPeer.println(json);
+		json = inPeer.readLine();
+		m = gson.fromJson(json, Message.class);
+		if (m.getParametro("status") != null)
+			System.out.println("Seeder status: " + m.getParametro("status"));
 		if (s.isConnected()) {
+			System.out.println("Comenzando la descarga...");
 			try {
 				InputStream in = s.getInputStream();
-				OutputStream out = new FileOutputStream(pathname);
+				OutputStream out = new FileOutputStream(destinationFolder + pathname);
 				byte[] bytes = new byte[16*1024];
 				int count;
 				while ((count = in.read(bytes)) > 0) {
@@ -276,16 +286,13 @@ public class PeerClient implements Runnable{
 				throw new PeerException("Error en la descarga!");
 			}
 		}
-		json = inPeer.readLine();
-		m = gson.fromJson(json, Message.class);
-		System.out.println("Estado descarga: " + m.getParametro("status"));
 		s.close();
 	}
 
 	public void menuCli() {
 		System.out.println();
 		System.out.println("Opciones sobre Red P2P:\n");
-		System.out.println("\tdownload [filename]\t\tDescarga archivos por nombre o checksum.");
+		System.out.println("\tdownload [filename] [dest-folder]\t\tDescarga archivos por nombre. Además se especifica la carpeta destino.");
 		System.out.println("\tfind [filename|chksum]\t\tBusca archivos por nombre o checksum.");
 		System.out.println("\tlist-files [peerId|*]\t\tLista todos los archivos que tiene un Seeder.");
 		System.out.println("\nOpciones para administrar archivos (locales) a compartir sobre red P2P:\n");
@@ -309,9 +316,13 @@ public class PeerClient implements Runnable{
 		String[] args = splitArgs(line);
 		String command = args[0];
 		if (command.equals("download")) {
-			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
+			if (args.length < 3) throw new PeerException(" [!] No especificaron suficientes argumentos.");
 			String filename = args[1];
-			Set<Seeder> set = findPeerWithFile(filename);
+			String destinationFolder = args[2];
+			String denom = args[1];
+			Set<Seeder> set;
+			if (denom.length() > 60) set = findPeerWithFileByChecksum(denom);
+			else set = findPeerWithFileByName(denom);
 			Seeder[] p = set.toArray(new Seeder[set.size()]);
 			boolean downloadOk = false;
 			int i = 0;
@@ -324,8 +335,9 @@ public class PeerClient implements Runnable{
 							i = (i==p.length)?0:i++;
 							intento = 0;
 						}
-						downloadFile(filename, p[i]);
+						downloadFile(filename, destinationFolder, p[i]);
 						downloadOk = true;
+						System.out.println(" [+] Descarga finalizada. Guardado en: '" +destinationFolder+filename+"'");
 					} catch (PeerException e) {
 						System.out.println(" [!] Error en la descarga. Intentando con Peer:" + p[i].getPeerId());
 						i++;
@@ -345,8 +357,10 @@ public class PeerClient implements Runnable{
 			}
 		} else if (command.equals("find")) {
 			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
-			String filename = args[1];
-			Set<Seeder> set = findPeerWithFile(filename);
+			String denom = args[1];
+			Set<Seeder> set;
+			if (denom.length() > 60) set = findPeerWithFileByChecksum(denom);
+			else set = findPeerWithFileByName(denom);
 			Seeder[] p = set.toArray(new Seeder[set.size()]);
 			if (p.length > 0) {
 				System.out.println(" [+] Seeders que tienen el archivo: ");
@@ -368,6 +382,7 @@ public class PeerClient implements Runnable{
 			} catch (IOException e) {
 				System.out.println(" [!] El archivo especifado no existe.");
 			}
+			announce();
 		}else if (command.equals("del")) {
 			if (args.length < 2) throw new PeerException(" [!] No especificaron suficientes argumentos.");
 			String pathname = args[1];
@@ -376,6 +391,7 @@ public class PeerClient implements Runnable{
 			} catch (IOException e) {
 				System.out.println(" [!] El archivo especifado no existe.");
 			}
+			announce();
 		} else if (command.equals("show-files")) {
 			showFilesToShare();
 		} else if (command.equals("help")) {

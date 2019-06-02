@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -53,27 +54,28 @@ public class PeerServerThread implements Runnable {
 					log.info(" [PEER_SERVER] - [GET] Msg Arrived.");
 					StoredFile sf = findFile(decodedMsg);
 					if (sf != null) {
+						log.info(" [PEER_SERVER] - [GET] File found.");
 						Message m = new Message("peer-data");
 						m.setParametro("status", "OK");
 						String json = gson.toJson(m);
-						outputChannel.print(json);
+						outputChannel.println(json);
 						sendFile(sf);
 					} else {
+						log.info(" [PEER_SERVER] - [GET] File NOT found.");
 						Message m = new Message("peer-error");
-						m.setParametro("status", "FAILED");
+						m.setParametro("status", "FAILED - File Not Found!");
 						m.setParametro("descrip", "File Not Found!");
 						String json = gson.toJson(m);
-						outputChannel.print(json);
+						outputChannel.println(json);
 					}
 
 				}
 			}
 			client.close();
+		}  catch (SocketException s) {
+			log.info(" [!] - Client disconnected.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SocketException s) {
-			s.printStackTrace();
 		}
 	}
 
@@ -91,6 +93,7 @@ public class PeerServerThread implements Runnable {
 			while ((count = in.read(bytes)) > 0) {
 				out.write(bytes, 0, count);
 			}
+			log.info(" [PEER_SERVER] - [GET] File sent correctly.");
 		}
 		out.close();
 		in.close();
