@@ -9,14 +9,14 @@
 
 ### Propuesta
 
-Se diseño la siguiente arquitectura de colas:
+Se diseño la siguiente arquitectura que implementa RMI y Colas:
 
 ![arquitectura de punto 4 - sobel](Diagrams/punto4-diagramas.png)
 
 ### Comunicacion
 - `ServerSobel`: RMI con cliente --> Puerto 80
-- `WorkerSobel`: envia resultados a ServerSobel --> QUEUE_W(N) - A traves de Colas
-- `SobelRequest`: correlacion entre WorkerSobel y Tarea asignada.
+- `WorkerSobel`: envia resultados a ServerSobel --> QUEUE_W(N) 
+- `SobelRequest`: correlacion entre WorkerSobel y parte de la imagen asignada.
 
 ### Buld & Run
 
@@ -28,8 +28,8 @@ rabbitmq-server start
 
 - Correr las clases en el siguiente orden:
 ```
--ServerSobel
--SobelClient
+1. ServerSobel
+2. SobelClient
 ```
 
 ### Conclusiones
@@ -39,7 +39,7 @@ las iteraciones anteriores con menos Workers. Se asocia la demora (con respecto 
 pudiendo ServerSobel tardar mas en leer los resultados, o bien que tarden mas en ser enviados por parte de `WorkerSobel.java` junto con 
 el tiempo que conlleva dividir la imagen y declarar las conexiones y colas de los Workers .
 
-- Ejemplo de Sobel localmente.
+- Ejemplo de Sobel localmente (Vista del cliente).
 ```
 21:44:04 [main] INFO  - ----- SobelClient iniciado -----
 Ingrese la ruta de la imagen a modificar: 
@@ -57,7 +57,7 @@ Se ha hecho la operacion exitosamente.
 21:44:26 [main] INFO  - La nueva imagen se ubica dentro del proyecto en la ruta: images/pc1-SobelResult.jpg
 ```
 
--Ejemplo de Sobel distribuido con 10 Workers.
+-Ejemplo de Sobel distribuido con 10 Workers (Vista del cliente). 
 
 ```
 21:46:38 [main] INFO  - ----- SobelClient iniciado -----
@@ -77,6 +77,5 @@ Se ha hecho la operacion exitosamente.
 
 ### Desarrollo
 #### Mejoras a realizar:
-- [ ] Persistir los Workers que conoce ServerSobel en un archivo externo, de manera que no se instancien en su `main` ya que 
-fisicamente representan maquinas distintas.
-- [ ] Permitir que los Workers atiendan peticiones pertenecientes a varios clientes y el ServerSobel pueda llevar un control de los mismos. 
+- [ ] Persistir extaer los datos de los Workers que conoce ServerSobel desde un archivo externo, de manera que no se instancien en su `main` ya que fisicamente representan maquinas distintas, instanciadas no necesariamente en el mismo momento.
+- [ ] Permitir que los Workers atiendan peticiones pertenecientes a varios clientes y el ServerSobel pueda llevar un control de los mismos de manera concurrente. 

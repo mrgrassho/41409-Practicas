@@ -6,8 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ import punto1.utils.Peer;
 public class ServerThread implements Runnable {
 	private String PEER_INFO;
 	private String FILES_INFO;
+	private static final Type SET_PEER_INFO = new TypeToken<ArrayList<Peer>>(){}.getType();
+	private static final Type SET_FILES_INFO = new TypeToken<ArrayList<FilesAtPeers>>(){}.getType();
 	private Socket client;
 	private Gson gson;
 	private Logger log;
@@ -58,8 +62,8 @@ public class ServerThread implements Runnable {
 					BufferedReader br2 = new BufferedReader(new FileReader(PEER_INFO));
 					FileWriter wr = new FileWriter(FILES_INFO);
 					FileWriter wr2 = new FileWriter(PEER_INFO);
-					ArrayList<FilesAtPeers> fp = gson.fromJson(br, new TypeToken<ArrayList<FilesAtPeers>>(){}.getType());
-					ArrayList<Peer> fp2 = gson.fromJson(br2, new TypeToken<ArrayList<Peer>>(){}.getType());
+					ArrayList<FilesAtPeers> fp = gson.fromJson(br, SET_FILES_INFO);
+					ArrayList<Peer> fp2 = gson.fromJson(br2, SET_PEER_INFO);
 					for (int i = 0; i < filesNameToAdd.length; i++) {
 						log.info(" [MASTER] - [ANNOUNCE] " + crntPeer.getPeerId() + " announce "+ filesNameToAdd[i].substring(0, 8));
 						// Busco si el archivo existe en el Json
@@ -87,17 +91,19 @@ public class ServerThread implements Runnable {
 					log.info(" [MASTER] - [ANNOUNCE] Files closed.");
 					Message m = new Message("ack");
 					String json = gson.toJson(m);
-					outputChannel.print(json);
+					outputChannel.println(json);
 					log.info(" [MASTER] - [ANNOUNCE] Send ACK to client.");
 				} else if (decodedMsg.getCmd().equals("find")) {
 					// Find file in PEER INFO file
 					log.info(" [MASTER] - [FIND] Msg arrived.");
 					String list = findFile(decodedMsg);
 					Message m = new Message("peer-info");
-					m.setParametro("peers", list);
-					log.info(" [MASTER] - [FIND] File found in [" + list + "]");
+					if (!list.isEmpty()) {
+						log.info(" [MASTER] - [FIND] File found in [" + list + "]");
+						m.setParametro("peers", list);
+					} else log.info(" [MASTER] - [FIND] File NOT found.");
 					String json = gson.toJson(m);
-					outputChannel.print(json);
+					outputChannel.println(json);
 				}
 			}
 		} catch (IOException e) {
@@ -118,35 +124,37 @@ public class ServerThread implements Runnable {
 
 	private String findFile(Message m) throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(FILES_INFO));
-		ArrayList<FilesAtPeers> fp = gson.fromJson(br, new TypeToken<ArrayList<FilesAtPeers>>(){}.getType());
-		Set<Peer> p = null;
-		String nombre = m.getParametro("name");
-		String chk = m.getParametro("checksum");
-		if (nombre != null && chk != null) {
-			for (FilesAtPeers fap : fp) {
-				if (fap.getName().equals(nombre) && fap.getChecksum().equals(chk)) {
-					p = fap.getPeers();
+		Set<Peer> p = new HashSet<>();
+		if (br.ready()) {
+			ArrayList<FilesAtPeers> fp = gson.fromJson(br, SET_FILES_INFO);
+			String nombre = m.getParametro("name");
+			String chk = m.getParametro("checksum");
+			if (nombre != null && chk != null) {
+				for (FilesAtPeers fap : fp) {
+					if (fap.getName().equals(nombre) && fap.getChecksum().equals(chk)) {
+						p = fap.getPeers();
+					}
+				}
+			} else if (nombre != null) {
+				for (FilesAtPeers fap : fp) {
+					if (fap.getName().equals(nombre)) {
+						p = fap.getPeers();
+					}
+				}
+			} else if (chk != null) {
+				for (FilesAtPeers fap : fp) {
+					if (fap.getChecksum().equals(chk)) {
+						p = fap.getPeers();
+					}
 				}
 			}
-		} else if (nombre != null) {
-			for (FilesAtPeers fap : fp) {
-				if (fap.getName().equals(nombre)) {
-					p = fap.getPeers();
-				}
-			}
-		} else if (chk != null) {
-			for (FilesAtPeers fap : fp) {
-				if (fap.getChecksum().equals(chk)) {
-					p = fap.getPeers();
-				}
-			}
+			br.close();
 		}
-		br.close();
 		String tmp = "";
 		for (Peer peer : p) {
 			tmp += peer.getPeerId() +",";
 		}
-		tmp = tmp.substring(0, tmp.length()-1);
+		tmp = (tmp!="") ? tmp.substring(0, tmp.length()-1) : tmp;
 		return tmp;
 	}
 
