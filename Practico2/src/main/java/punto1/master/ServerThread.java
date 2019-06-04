@@ -68,8 +68,8 @@ public class ServerThread implements Runnable {
 					JsonReader br2 = new JsonReader(new FileReader(PEER_INFO));
 					ArrayList<FilesAtPeers> fp = gson.fromJson(br, ARR_FILES_INFO);
 					ArrayList<Seeder> fp2 = gson.fromJson(br2, ARR_PEER_INFO);
-					System.out.println(gson.toJson(fp));
-					System.out.println(gson.toJson(fp2));
+					log.info(" [MASTER] - [ANNOUNCE] Contenido de Archivo('"+ARR_FILES_INFO+"') ->"+gson.toJson(fp));
+					log.info(" [MASTER] - [ANNOUNCE] Contenido de Archivo('"+ARR_PEER_INFO+"') ->"+gson.toJson(fp2));
 					br.close();
 					br2.close();
 					FileWriter wr = new FileWriter(FILES_INFO);
@@ -77,7 +77,7 @@ public class ServerThread implements Runnable {
 					fp = (fp==null)? new ArrayList<>(): fp;
 					fp2 = (fp2==null)? new ArrayList<>(): fp2;
 					for (int i = 0; i < filesNameToAdd.length; i++) {
-						log.info(" [MASTER] - [ANNOUNCE] " + crntPeer.getPeerId() + " announce "+ filesNameToAdd[i].substring(0, 8));
+						log.info(" [MASTER] - [ANNOUNCE] " + crntPeer.getPeerId() + " announce file. SHA-256:"+ filesChkToAdd[i]);
 						// Busco si el archivo existe en el Json
 						if ((index = findChk(filesChkToAdd[i], fp)) != -1) {
 							// SI existe -> agarro el Element y le agrego el IP y PORT to Add

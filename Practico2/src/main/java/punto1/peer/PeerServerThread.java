@@ -44,17 +44,17 @@ public class PeerServerThread implements Runnable {
 		try {
 			BufferedReader inputChannel = new BufferedReader (new InputStreamReader (client.getInputStream()));
 			PrintWriter outputChannel = new PrintWriter (client.getOutputStream(),true);
-			log.info(" [PEER_SERVER] Waiting for CMDs...");
+			//log.info(" [PEER_SERVER] Waiting for CMDs...");
 			String msg;
 			int index;
 			InputStream in = null;
 			while((msg = inputChannel.readLine()) != null) {
 				Message decodedMsg = gson.fromJson(msg, Message.class);
 				if (decodedMsg.getCmd().equals("get-file")) {
-					log.info(" [PEER_SERVER] - [GET] Msg Arrived.");
+					//log.info(" [PEER_SERVER] - [GET] Msg Arrived.");
 					StoredFile sf = findFile(decodedMsg);
 					if (sf != null) {
-						log.info(" [PEER_SERVER] - [GET] File found.");
+						//log.info(" [PEER_SERVER] - [GET] File found.");
 						Message m = new Message("peer-data");
 						m.setParametro("status", "OK");
 						m.setParametro("checksum", sf.getChecksum());
@@ -63,7 +63,7 @@ public class PeerServerThread implements Runnable {
 						outputChannel.println(json);
 						sendFile(sf);
 					} else {
-						log.info(" [PEER_SERVER] - [GET] File NOT found.");
+						//log.info(" [PEER_SERVER] - [GET] File NOT found.");
 						Message m = new Message("peer-error");
 						m.setParametro("status", "FAILED - File Not Found!");
 						m.setParametro("descrip", "File Not Found!");
@@ -75,7 +75,7 @@ public class PeerServerThread implements Runnable {
 			}
 			client.close();
 		}  catch (SocketException s) {
-			log.info(" [!] - Client disconnected.");
+			//log.info(" [!] - Client disconnected.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -90,12 +90,12 @@ public class PeerServerThread implements Runnable {
 			long length = file.length();
 			byte[] bytes = new byte[16 * 1024];
 			in = new FileInputStream(file);
-			log.info(" [PEER_SERVER] - [GET] Sending file " + sf.getChecksum() + " (" + sf.getName()+")");
+			//log.info(" [PEER_SERVER] - [GET] Sending file " + sf.getChecksum() + " (" + sf.getName()+")");
 			int count;
 			while ((count = in.read(bytes)) > 0) {
 				out.write(bytes, 0, count);
 			}
-			log.info(" [PEER_SERVER] - [GET] File sent correctly.");
+			//log.info(" [PEER_SERVER] - [GET] File sent correctly.");
 		}
 		out.close();
 		in.close();

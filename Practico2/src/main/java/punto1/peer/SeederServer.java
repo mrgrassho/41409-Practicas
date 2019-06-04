@@ -25,16 +25,16 @@ public class SeederServer implements Runnable{
 	public void startServer() {
 		try {
 			ss = new ServerSocket (this.port);
-			log.info("PeerServer started on " + this.port);
+			//log.info("PeerServer started on " + this.port);
 			while (true) {
 				Socket client = ss.accept();
-				log.info("Client connected from " + client.getInetAddress().getCanonicalHostName()+":"+client.getPort());
+				//log.info("Client connected from " + client.getInetAddress().getCanonicalHostName()+":"+client.getPort());
 				PeerServerThread ts = new PeerServerThread(log, gson, client, FILES_INFO);
 				Thread tsThread = new Thread(ts);
 				tsThread.start();
 			}
 		} catch (IOException e) {
-			log.info("Port in use!");
+			//log.info("Port in use!");
 		}
 	}
 
