@@ -57,6 +57,8 @@ public class PeerServerThread implements Runnable {
 						log.info(" [PEER_SERVER] - [GET] File found.");
 						Message m = new Message("peer-data");
 						m.setParametro("status", "OK");
+						m.setParametro("checksum", sf.getChecksum());
+						m.setParametro("name", sf.getName());
 						String json = gson.toJson(m);
 						outputChannel.println(json);
 						sendFile(sf);

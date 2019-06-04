@@ -1,7 +1,5 @@
 package punto1.peer;
 
-import java.util.ArrayList;
-import java.util.Random;
 import java.util.Scanner;
 
 public class PeerMain {
@@ -15,8 +13,8 @@ public class PeerMain {
 		int peerPort;
 		do {
 			peerPort = sc.nextInt();
-			if (peerPort < 8000) System.out.println("Error ingrese puerto mayor a 8000");
-		} while(peerPort < 8000);
+			if (peerPort < 1000 || peerPort > 65536) System.out.println("Error ingrese puerto mayor a 1000 o menor a 65536");
+		} while(peerPort < 1000 || peerPort > 65535);
 		SeederServer ss = new SeederServer(peerPort);
 		Thread tServer = new Thread(ss);
 		PeerClient pc = new PeerClient(peerPort, "localhost");

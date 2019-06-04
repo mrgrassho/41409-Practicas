@@ -1,5 +1,6 @@
 package punto1.utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -32,8 +33,9 @@ public class StoredFile {
 		MessageDigest md = null;
 		DigestInputStream dis = null;
 		md = MessageDigest.getInstance("SHA-256");
-		InputStream is = Files.newInputStream(Paths.get(pathname));
+		InputStream is = new FileInputStream(pathname);
 		dis = new DigestInputStream(is, md);
+		while (dis.read() != -1) { /*READING FILE -> STORES THE HASH*/}
 		return getMessageDigest(dis);
 	}
 
