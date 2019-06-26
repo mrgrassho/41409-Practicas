@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Random;
@@ -20,15 +21,11 @@ import punto3.core.Message;
 public class ClientTCP implements Runnable {
 	Socket s;
 	int numClient;
-	static int REQUESTS = 30; 
+	static int REQUESTS = 30;   
 	private Logger log;
 	
-	public ClientTCP (String ip, int port, Logger log) {
-		try {
-			this.s = new Socket (ip, port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public ClientTCP (String ip, int port, Logger log) throws UnknownHostException, IOException {
+		this.s = new Socket (ip, port);
 		this.log = log;
 		this.numClient = (int)(Math.random() * 10000) + 1; 	
 	}
@@ -49,10 +46,10 @@ public class ClientTCP implements Runnable {
 				funcion.setHeader("client",String.valueOf(numClient));
 				//write to server 
 				outputChannel.writeObject(funcion);
-				log.info("["+numClient+"] Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
+				log.info("["+numClient+"] ("+c+") Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
 				//read 
 				Message response = (Message) inputChannel.readObject();
-				log.info("["+numClient+"] El servidor ha respondido> "+response.getResultado());
+				log.info("["+numClient+"] ("+c+") El servidor ha respondido> "+response.getResultado());
 			}
 			s.close();
 		} catch (UnknownHostException e) {

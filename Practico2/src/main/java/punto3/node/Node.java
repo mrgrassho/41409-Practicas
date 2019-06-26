@@ -1,5 +1,6 @@
 package punto3.node;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 
 public class Node {
@@ -11,10 +12,12 @@ public class Node {
 	private int currentLoad;
 	private float percentageLoad;
 	private NodeState nodeState;
-
+	private Timestamp lastTimestampMessageRecv;
+	private Timestamp lastTimestampMessageSend;
+	
 	public Node(String name, String ip, int port, int maxLoad) {
 		this.name = name;
-		this.ip = ip;
+		this.setIp(ip);
 		this.port = port;
 		services = new ArrayList<>();
 		this.maxLoad = maxLoad;
@@ -137,5 +140,35 @@ public class Node {
 
 	public void decreaseCurrentLoad() {
 		this.decreaseCurrentLoad(1);
+	}
+
+
+	public String getIp() {
+		return ip;
+	}
+
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+
+	public Timestamp getLastTimestampMessageSend() {
+		return lastTimestampMessageSend;
+	}
+
+
+	public void setLastTimestampMessageSend(Timestamp lastTimestampMessageSend) {
+		this.lastTimestampMessageSend = lastTimestampMessageSend;
+	}
+
+
+	public Timestamp getLastTimestampMessageRecv() {
+		return lastTimestampMessageRecv;
+	}
+
+
+	public void setLastTimestampMessageRecv(Timestamp lastTimestampMessageRecv) {
+		this.lastTimestampMessageRecv = lastTimestampMessageRecv;
 	}
 }

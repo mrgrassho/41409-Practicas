@@ -3,6 +3,7 @@ package punto3.node;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -47,13 +48,13 @@ public class NodeMain {
 	private Node node;
 	private Gson googleJson;
 	private int max_tasks;
-	
+
 	private static final ArrayList<String> DICCIONARIO = new ArrayList<String>(Arrays.asList(
 			"NodoA", "NodoB", "NodoC", "NodoD", "NodoE", "NodoF", "NodoG", "NodoH",
 			"NodoI", "NodoJ", "NodoK", "NodoL", "NodoM", "NodoN", "NodoO", "NodoP",
 			"NodoQ", "NodoR", "NodoS", "NodoT", "NodoU", "NodoV", "NodoW", "NodoX",
 			"NodoY", "NodoZ"
-	));
+			));
 
 	public Node getNode() {
 		return this.node;
@@ -68,21 +69,20 @@ public class NodeMain {
 		this.myNodeQueueName = this.node.getName();
 		googleJson = new Gson();
 		this.configureConnectionToRabbit();
-		log.info(" RabbitMQ - Connection established");
 	}
-	
+
 	void configRabbitParms() {
 		try (InputStream input = new FileInputStream(RABBITMQ_CONFIG_FILE)) {
-            Properties prop = new Properties();
-            // load a properties file
-            prop.load(input);
-            this.ipRabbitMQ = prop.getProperty("IP");
-            this.portRabbitMQ = Integer.parseInt(prop.getProperty("PORT"));
-            this.username = prop.getProperty("USER");
-            this.password = prop.getProperty("PASS");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+			Properties prop = new Properties();
+			// load a properties file
+			prop.load(input);
+			this.ipRabbitMQ = prop.getProperty("IP");
+			this.portRabbitMQ = Integer.parseInt(prop.getProperty("PORT"));
+			this.username = prop.getProperty("USER");
+			this.password = prop.getProperty("PASS");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private void configureConnectionToRabbit() {
@@ -97,6 +97,8 @@ public class NodeMain {
 			this.queueChannel.queueDeclare(this.outputQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.activesQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.myNodeQueueName, true, false, false, null);
+		} catch (ConnectException e) {
+			System.err.println("[!] RabbitMQ Server is down.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -106,19 +108,23 @@ public class NodeMain {
 
 	public void startNode() {
 		try {
-			log.info(this.node.getName()+" Started");
-			DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-				Message message = googleJson.fromJson(new String(delivery.getBody(), "UTF-8"), Message.class);
-				log.info("["+ delivery.getEnvelope().getRoutingKey() + "] received: " + googleJson.toJson(message));
-				//Asigna Tarea a Thread
-				log.info("["+this.node.getName()+"] " + "Working...");
-				//asigno la tarea a un thread
-				Random r = new Random();
-				ThreadNode tn = new ThreadNode(r.nextLong(), this.node,Long.parseLong(message.getHeader("token-id")),message, queueChannel,this.activesQueueName,outputQueueName,log);
-				Thread nodeThread = new Thread(tn);
-				nodeThread.start();
-			};
-			queueChannel.basicConsume(this.myNodeQueueName, true, deliverCallback, consumerTag -> {});
+			if (queueChannel != null) {
+				log.info(this.node.getName()+" Started");
+				queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "fanout");
+				queueChannel.queueBind(notificationQueueName, EXCHANGE_OUTPUT, "");
+				DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+					Message message = googleJson.fromJson(new String(delivery.getBody(), "UTF-8"), Message.class);
+					log.info("["+ delivery.getEnvelope().getRoutingKey() + "] received: " + googleJson.toJson(message));
+					//Asigna Tarea a Thread
+					log.info("["+this.node.getName()+"] Working...");
+					//asigno la tarea a un thread
+					Random r = new Random();
+					ThreadNode tn = new ThreadNode(r.nextLong(), this.node,Long.parseLong(message.getHeader("token-id")),message, queueChannel,EXCHANGE_OUTPUT,log);
+					Thread nodeThread = new Thread(tn);
+					nodeThread.start();
+				};
+				queueChannel.basicConsume(this.myNodeQueueName, true, deliverCallback, consumerTag -> {});
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -141,7 +147,9 @@ public class NodeMain {
 			node.add(new NodeMain(new Node(Nodo, "localhost", 8071,20)));
 			node.get(i).node.addService(new ServiceSuma(8071,"suma"));
 			node.get(i).node.addService(new ServiceResta(8072,"resta"));
-			node.get(i).startNode();
+			if (i % 3 != 0) {
+				node.get(i).startNode();
+			}
 			i++;
 		}
 		

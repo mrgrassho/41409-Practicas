@@ -38,7 +38,7 @@ Se diseño la siguiente arquitectura de colas:
 - **healthChecker**, hilo encargado de monitorear el estado globlal del sistema y realizar la correspondiente acción para volver a estado normal la red.
 
 | Estado | Carga*  | Acción
-| :------------- | :------------- |
+| :------------- | :------------- | :-------------
 | **GLOBAL_CRITICAL**  | 80% - 100% | Se crean **nodosActivos/2** nuevos nodos (si es mayor a 1, sino 1)**
 | **GLOBAL_ALERT** | 50% - 80% | Se crean **nodosActivos/4** nuevos nodos (si es mayor a 1, sino 1)**
 | **GLOBAL_NORMAL** | 20% - 50% | -
@@ -111,12 +111,12 @@ python3 ClientGenerator.py
 
 #### TO-FIX:
 
-- [ ] Revisar getNextNodeSafe() **[DONE]**
-- [ ] Corregir creacion dinamica de Nodos. **[DONE]**
-- [ ] Hacer que msgProcess() sea multi-Thread. (Single-Thread ocasiona problemas de lectura cuando hay mucha carga). **[DONE]**
+- [x] Revisar getNextNodeSafe()
+- [x] Corregir creacion dinamica de Nodos.
+- [x] Hacer que msgProcess() sea multi-Thread. (Single-Thread ocasiona problemas de lectura cuando hay mucha carga).
 
 #### TO-DO:
 
 - [ ] Agregar script que tire nodos al azar.
-- [ ] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher). **[DONE]**
+- [x] Obtener configuracion de nodos de un archivo externo (Sacar Nodos harcodeados del Dispatcher). 
 - [ ] Persistir Lista de Nodos Activos cada cierto tiempo x (Para recurperarse en caso de caida del dispatcher).

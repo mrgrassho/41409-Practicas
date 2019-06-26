@@ -2,11 +2,15 @@ package punto3.core;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
@@ -34,8 +38,6 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.*;
-import javax.xml.xpath.XPathExpressionException;
-
 import java.io.*;
 
 public class Dispatcher {
@@ -48,11 +50,9 @@ public class Dispatcher {
 	private Connection queueConnection;
 	private Channel queueChannel;
 	public String inputQueueName = "inputQueue";
-	public String notificationQueueName = "notificationQueue";
 	public String GlobalStateQueueName = "GlobalStateQueue";
-	public String inprocessQueueName = "inProcessQueue";
+	private String notificationQueueName = "notificationQueue";
 	public String ip;
-	private Map<String, Thread> threads;
 
 	private int port;
 	private Node nodoActual;
@@ -62,6 +62,8 @@ public class Dispatcher {
 	// 1000 trys in a interval of 10ms => 10 seconds per node
 	public static final int RETRY_SLEEP_TIME = 10;
 	public static final int MAX_RETRIES_IN_NODE = 1000;
+	protected static final long SLEEP_KEEP_ALIVER_TIME = 5000; // 2 second
+	protected static final long TIME_LAPSE_ALLOWED = 30000; // 30 seconds
 	public Gson googleJson;
 	public GetResponse response;
 	private GlobalState globalState;
@@ -69,9 +71,8 @@ public class Dispatcher {
 	private volatile int globalCurrentLoad;
 	private DocumentBuilder builder;
 	private Document documentNodes;
-
 	private ArrayList<String> DICCIONARIO;
-	
+
 
 	private EstadoCreador estadoCreador = EstadoCreador.IDLE;
 
@@ -81,14 +82,10 @@ public class Dispatcher {
 		this.globalMaxLoad = 0;
 		this.globalCurrentLoad = 0;
 		googleJson = new GsonBuilder()
-		        .registerTypeAdapter(Service.class, new InterfaceSerializer(ServiceResta.class))
-		        .registerTypeAdapter(Service.class, new InterfaceSerializer(ServiceSuma.class))
-		        .create();
+				.registerTypeAdapter(Service.class, new InterfaceSerializer(ServiceResta.class))
+				.registerTypeAdapter(Service.class, new InterfaceSerializer(ServiceSuma.class))
+				.create();
 		this.configureConnectionToRabbit();
-		
-		log.info(" RabbitMQ - Connection established");
-
-		threads = new HashMap<String,Thread>();
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
 			this.builder = factory.newDocumentBuilder();
@@ -102,30 +99,31 @@ public class Dispatcher {
 			e.printStackTrace();
 		}
 	}
-	
+
 	void configRabbitParms() {
 		try (InputStream input = new FileInputStream(RABBITMQ_CONFIG_FILE)) {
-            Properties prop = new Properties();
-            // load a properties file
-            prop.load(input);
-            this.ip = prop.getProperty("IP");
-            this.port = Integer.parseInt(prop.getProperty("PORT"));
-            this.username = prop.getProperty("USER");
-            this.password = prop.getProperty("PASS");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+			Properties prop = new Properties();
+			// load a properties file
+			prop.load(input);
+			this.ip = prop.getProperty("IP");
+			this.port = Integer.parseInt(prop.getProperty("PORT"));
+			this.username = prop.getProperty("USER");
+			this.password = prop.getProperty("PASS");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
-	
+
 	void setValuesToDiccionario() {
 		DICCIONARIO = new ArrayList<>();
 		NodeList nd = documentNodes.getElementsByTagName("node");
 		for (int i = 0; i < nd.getLength(); i++) {
 			Element e = (Element) nd.item(i);
 			String name = e.getAttribute("id");
+			DICCIONARIO.add(name);
 		}
 	}
-	
+
 
 	/*CARGA CONFIGURACION RABBIT: Declara conexion, canal y colas que va a usar Dispatcher*/
 	private void configureConnectionToRabbit() {
@@ -139,9 +137,8 @@ public class Dispatcher {
 			this.queueChannel = this.queueConnection.createChannel();
 			this.queueChannel.queueDeclare(this.inputQueueName, true, false, false, null);
 			this.queueChannel.queueDeclare(this.GlobalStateQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.notificationQueueName, true, false, false, null);
-			this.queueChannel.queueDeclare(this.inprocessQueueName, true, false, false, null);
-			this.queueChannel.exchangeDeclare(EXCHANGE_NOTIFY, BuiltinExchangeType.DIRECT);
+		} catch (ConnectException e) {
+			System.err.println("[!] RabbitMQ Server is down.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (TimeoutException e) {
@@ -151,33 +148,33 @@ public class Dispatcher {
 
 	private void loadNodeConfigFromFile() {
 		try {
-			NodeList nd = documentNodes.getElementsByTagName("node");
-			nodosActivos = new ArrayList<Node>();
-			for (int i = 0; i < 3; i++) {
-				Element e = (Element) nd.item(i);
-				String name = e.getAttribute("id");
-				String ip = e.getElementsByTagName("ip").item(0).getTextContent();
-				int port = Integer.parseInt(e.getElementsByTagName("port").item(0).getTextContent());
-				int maxLoad = Integer.parseInt(e.getElementsByTagName("maxload").item(0).getTextContent());
-				nodosActivos.add(new Node(name, ip, port, maxLoad));
-				NodeList serv = e.getElementsByTagName("service");
-				for (int j = 0; j < serv.getLength(); j++) {
-					if (serv.item(j).getTextContent().equals("suma")) {
-						nodosActivos.get(i).addService(new ServiceSuma(0, serv.item(j).getTextContent()));
-					} else {
-						nodosActivos.get(i).addService(new ServiceResta(0, serv.item(j).getTextContent()));
+			if (queueChannel != null) {
+				NodeList nd = documentNodes.getElementsByTagName("node");
+				nodosActivos = new ArrayList<Node>();
+				for (int i = 0; i < 3; i++) {
+					Element e = (Element) nd.item(i);
+					String name = e.getAttribute("id");
+					String ip = e.getElementsByTagName("ip").item(0).getTextContent();
+					int port = Integer.parseInt(e.getElementsByTagName("port").item(0).getTextContent());
+					int maxLoad = Integer.parseInt(e.getElementsByTagName("maxload").item(0).getTextContent());
+					nodosActivos.add(new Node(name, ip, port, maxLoad));
+					NodeList serv = e.getElementsByTagName("service");
+					for (int j = 0; j < serv.getLength(); j++) {
+						if (serv.item(j).getTextContent().equals("suma")) {
+							nodosActivos.get(i).addService(new ServiceSuma(0, serv.item(j).getTextContent()));
+						} else {
+							nodosActivos.get(i).addService(new ServiceResta(0, serv.item(j).getTextContent()));
+						}
 					}
 				}
+				for (Node node : nodosActivos) {
+					this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
+					this.increaseGlobalCurrentLoad(node.getCurrentLoad());
+					this.increaseGlobalMaxLoad(node.getMaxLoad());
+				}
+				updateGlobal();
+				this.nodoActual = nodosActivos.get(0);
 			}
-			for (Node node : nodosActivos) {
-				this.queueChannel.queueDeclare(node.getName(), true, false, false, null);
-				this.queueChannel.queueDeclare(node.getName()+"inProcess", true, false, false, null);
-				this.increaseGlobalCurrentLoad(node.getCurrentLoad());
-				this.increaseGlobalMaxLoad(node.getMaxLoad());
-			}
-			updateGlobal();
-			String mString = googleJson.toJson(nodosActivos.get(0));
-			this.nodoActual = nodosActivos.get(0);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -188,12 +185,13 @@ public class Dispatcher {
 	private void purgeQueues() {
 
 		try {
-			this.queueChannel.queuePurge(this.inputQueueName);
-			this.queueChannel.queuePurge(this.GlobalStateQueueName);
-			this.queueChannel.queuePurge(this.notificationQueueName);
-			for (Node node : nodosActivos) {
-				log.info(node.getName());
-				this.queueChannel.queuePurge(node.getName());
+			if (queueChannel != null) {
+				this.queueChannel.queuePurge(this.inputQueueName);
+				this.queueChannel.queuePurge(this.GlobalStateQueueName);
+				for (Node node : nodosActivos) {
+					log.info(node.getName());
+					this.queueChannel.queuePurge(node.getName());
+				}
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -256,8 +254,8 @@ public class Dispatcher {
 	private DeliverCallback msgDispatch = (consumerTag, delivery) -> {
 		String json;
 		log.info(" [msgDispatch] received msg from " + delivery.getEnvelope().getRoutingKey());
-		log.info(new String(delivery.getBody(), "UTF-8"));
 		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);//message from ThreadServer
+		Message messageCopy = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);
 		try {
 			Node n = getNextNodeSafe(message.getFunctionName());
 			synchronized (this.nodoActual) {
@@ -265,17 +263,21 @@ public class Dispatcher {
 			}
 			// Add destination Node
 			message.setHeader("to-node", n.getName());
-			this.queueChannel.queueBind(notificationQueueName, EXCHANGE_NOTIFY, message.getHeader("token-id"));
-			log.info(" [msgDispatch] Dispatcher declared new bind> notificationQueue | Exchange '" + EXCHANGE_NOTIFY + "' | RoutingKey '"+message.getHeader("token-id")+"'" );
-			// Send Msg to InProcessQueue
-			json = googleJson.toJson(message);
-			queueChannel.basicPublish("", n.getName()+"inProcess", MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));;
-			log.info(" [msgDispatch] sent msg to " + n.getName()+"inProcess");
 			// Send Msg to Node Queue
 			json = googleJson.toJson(message);
 			queueChannel.basicPublish("", n.getName(), MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 			log.info(" [msgDispatch] sent msg to " +  n.getName());
 			// Update Node Load
+			Timestamp ts = new Timestamp(System.currentTimeMillis());
+			if (n.getLastTimestampMessageSend() != null) {
+				if (n.getLastTimestampMessageRecv().before(n.getLastTimestampMessageSend())) {
+					n.setLastTimestampMessageRecv(ts);
+				}
+			} else {
+				if (n.getLastTimestampMessageRecv() == null) {
+					n.setLastTimestampMessageRecv(ts);
+				}
+			}
 			n.increaseCurrentLoad();
 			json = googleJson.toJson(n);
 			log.info(" [+] currentLoad ["+ n.getName() + "]: " + n.getCurrentLoad());
@@ -284,14 +286,27 @@ public class Dispatcher {
 			// Update Total Load
 			increaseGlobalCurrentLoad();
 			log.info(" [+] GlobalCurrentLoad ["+ this.globalCurrentLoad+"]");
-
 		}  catch (Exception e) {
 			log.info(" [-] Service Not found.");
-			String xString = googleJson.toJson(new Message("Service Not found."));
-			//queueChannel.basicPublish("", message.getHeader("token-id"), MessageProperties.PERSISTENT_TEXT_PLAIN, xString.getBytes("UTF-8"));
+			json = googleJson.toJson(messageCopy);
+			queueChannel.basicPublish("",inputQueueName,  MessageProperties.PERSISTENT_TEXT_PLAIN, json.getBytes("UTF-8"));
 		}
 	};
-	
+
+	private DeliverCallback msgNotificationReady = (consumerTag, delivery) ->{
+		Message message = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Message.class);//message from ThreadServer
+		String nodeName = message.getHeader("to-node");
+		log.info(" [ NOTIFICATION ] Received msg from " + nodeName);
+		Timestamp ts = new Timestamp(System.currentTimeMillis());
+		Node n = findNodeByName(nodeName);
+		if (n != null) {
+			n.setLastTimestampMessageSend(ts);
+			n.decreaseCurrentLoad();
+			decreaseGlobalCurrentLoad();
+			updateGlobal();
+		}
+	};
+
 	private Node loadNewNodeConfig(String Name) {
 		Node n;
 		Element e = documentNodes.getElementById(Name);
@@ -309,7 +324,7 @@ public class Dispatcher {
 			}
 		}
 		return n;
-		
+
 	}
 
 	public void createNodos(int k) throws UnsupportedEncodingException, IOException {
@@ -329,14 +344,64 @@ public class Dispatcher {
 				}
 				increaseGlobalMaxLoad(n.getMaxLoad());
 				this.queueChannel.queueDeclare(n.getName(), true, false, false, null);
-				this.queueChannel.queueDeclare(n.getName()+"inProcess", true, false, false, null);
-				MessageProcessor msg = new MessageProcessor(this, n.getName()+"inProcess");
-				threads.put(n.getName(), new Thread(msg));
-				threads.get(n.getName()).start();
 			}
 		}
 		updateGlobal();
 	}
+
+	Thread 	ThreadkeepAliver = new Thread() {
+		public void run() {
+			try {
+				while(true) {
+					log.info("[ KEEP ALIVER ] Scanning Nodes...");
+					ArrayList<Node> nodesToRemove =new ArrayList<>();
+					Timestamp ts = new Timestamp(System.currentTimeMillis()-TIME_LAPSE_ALLOWED);
+					if (getGlobalCurrentLoad() > 0) {
+						log.info(googleJson.toJson(nodosActivos));
+						for (Node node : nodosActivos) {
+							log.info("Node:"+node.getName()+" Now:" + ts + ", ["+node.getLastTimestampMessageRecv() + " - " + node.getLastTimestampMessageSend() +"]");
+							if (node.getCurrentLoad() > 0) {
+								if (node.getLastTimestampMessageRecv() != null) {
+									if (node.getLastTimestampMessageSend() != null) {
+										if (node.getLastTimestampMessageRecv().after(node.getLastTimestampMessageSend())) {
+											if (node.getLastTimestampMessageRecv().before(ts)) {
+												nodesToRemove.add(node);
+											}
+										}
+									} else {
+										if (node.getLastTimestampMessageRecv().before(ts)) {
+											nodesToRemove.add(node);
+										}
+									}
+								}
+							}
+						}
+					}
+					if (nodesToRemove.isEmpty()) {
+						log.info("[ KEEP ALIVER ] All Nodes are up.");
+					} else {
+						for (Node node : nodesToRemove) {
+							log.info("[ KEEP ALIVER ] "+node.getName()+" time execution exceeded. It's been removed..." );
+							nodosActivos.remove(node);
+							decreaseGlobalMaxLoad(node.getMaxLoad());
+							decreaseGlobalCurrentLoad(node.getCurrentLoad());
+							synchronized (nodosActivos) {
+								nodosActivos.remove(node);
+							}
+							queueChannel.queueDelete(node.getName());
+						}
+						updateGlobal();
+					}
+					Thread.sleep(SLEEP_KEEP_ALIVER_TIME);
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	};
 
 	private void removeNodos(int k) throws UnsupportedEncodingException, IOException {
 		String json = "{}";
@@ -353,9 +418,7 @@ public class Dispatcher {
 				synchronized (nodosActivos) {
 					nodosActivos.remove(n);
 				}
-				this.queueChannel.queueDelete(n.getName());	
-				this.queueChannel.queueDelete(n.getName()+"inProcess");
-				//threads.get(n.getName()).interrupt();
+				this.queueChannel.queueDelete(n.getName());
 			}
 		}
 		updateGlobal();
@@ -435,36 +498,6 @@ public class Dispatcher {
 		if (this.queueChannel.messageCount(GlobalStateQueueName) > 0) this.queueChannel.basicGet(GlobalStateQueueName, true);
 		this.queueChannel.basicPublish("", GlobalStateQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN, JsonMsg.getBytes("UTF-8"));
 	}
-
-	private DeliverCallback ActiveNodeDeliverCallback = (consumerTag, delivery) -> {
-		Node updateNode = googleJson.fromJson(new String(delivery.getBody(),"UTF-8"), Node.class);
-		Node previousNode = findNodeByName(updateNode.getName());
-		log.info("[AQ] - NEW -> " + updateNode.getName() + " - " + updateNode.getPort());
-		if (previousNode != null) {
-			log.info("[AQ] - OLD -> " + previousNode.getName());
-			log.info("[AQ] - " + updateNode.getName() + " - Load:"+ updateNode.getPercentageLoad());
-			if (previousNode.getName().equals(updateNode.getName())) {
-				nodosActivos.set(nodosActivos.indexOf(previousNode), updateNode);
-				decreaseGlobalMaxLoad(previousNode.getMaxLoad());
-				increaseGlobalMaxLoad(updateNode.getMaxLoad());
-				if (updateNode.getNodeState() == NodeState.DEAD) {
-					synchronized (nodosActivos) {
-						nodosActivos.remove(previousNode);
-					}
-					this.queueChannel.queueDelete(previousNode.getName());
-				}
-			}
-		} else {
-			log.info("[AQ] - OLD -> NULL");
-			log.info("[AQ] - Creating Queue for " + updateNode.getName());
-			this.queueChannel.queueDeclare(updateNode.getName(), true, false, false, null);
-			synchronized (nodosActivos) {
-				nodosActivos.add(updateNode);
-			}
-			increaseGlobalMaxLoad(updateNode.getMaxLoad());
-		}
-		updateGlobal();
-	};
 
 	public Channel getQueueChannel() {
 		return queueChannel;
@@ -551,16 +584,18 @@ public class Dispatcher {
 	}
 
 	public void startServer() {
-		log.info(" Dispatcher Started");
 		try {
-			queueChannel.exchangeDeclare(EXCHANGE_OUTPUT, "fanout");
-			queueChannel.queueBind(this.notificationQueueName, EXCHANGE_OUTPUT, "");
-			// Init RabbitMQ Thread which listens to InputQueue
-			this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});
-			// Init RabbitMQ Thread which make sure that the message is attend it.
-			initMsgProcess();
-			// Init RabbitMQ Thread that listens and updates to ActiveQueue
-			this.healthChecker();
+			if (queueChannel != null) {
+				log.info(" Dispatcher Started");
+				// Init RabbitMQ Thread which listens to InputQueue
+				this.queueChannel.basicConsume(inputQueueName, true, msgDispatch, consumerTag -> {});
+				// Init RabbitMQ Thread that listens and updates to ActiveQueue
+				this.healthChecker();
+				// Init RabbitMQ Thread that decreseases Node's Load and Global Load.
+				this.queueChannel.basicConsume(notificationQueueName, true, msgNotificationReady, consumerTag -> {});
+				// KeepAliver;
+				ThreadkeepAliver.start();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			try {
@@ -569,14 +604,6 @@ public class Dispatcher {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-		}
-	}
-
-	private void initMsgProcess() {
-		for (Node n : nodosActivos) {
-			MessageProcessor msg = new MessageProcessor(this, n.getName()+"inProcess");
-			threads.put(n.getName(),new Thread(msg));
-			threads.get(n.getName()).start();
 		}
 	}
 
