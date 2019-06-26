@@ -30,7 +30,7 @@ public class ServiceSuma implements Service {
 		}
 		try {
 			// Hacemos que la tarea tarde mas
-			Thread.sleep(5000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

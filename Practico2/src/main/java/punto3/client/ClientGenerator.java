@@ -12,11 +12,10 @@ public class ClientGenerator {
 	private final static Logger log = LoggerFactory.getLogger(ClientGenerator.class);
 
 	public static void main(String[] args) {
-		int count = 10;
+		int count = 100;
 		int thread = (int) Thread.currentThread().getId();
 		String packetName = ServerMain.class.getSimpleName().toString()+"-"+thread;
 		System.setProperty("log.name",packetName);
-
 
 		ClientTCP cliente;
 		try {

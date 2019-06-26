@@ -21,15 +21,15 @@ import punto3.core.Message;
 public class ClientTCP implements Runnable {
 	Socket s;
 	int numClient;
-	static int REQUESTS = 30;   
+	static int REQUESTS = 30;
 	private Logger log;
-	
+
 	public ClientTCP (String ip, int port, Logger log) throws UnknownHostException, IOException {
 		this.s = new Socket (ip, port);
 		this.log = log;
-		this.numClient = (int)(Math.random() * 10000) + 1; 	
+		this.numClient = (int)(Math.random() * 10000) + 1;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
@@ -44,10 +44,11 @@ public class ClientTCP implements Runnable {
 				funcion.addParametro("num1", (int) (Math.random() * 10));
 				funcion.addParametro("num2", (int) (Math.random() * 10));
 				funcion.setHeader("client",String.valueOf(numClient));
-				//write to server 
+				funcion.setHeader("tipo","query");
+				//write to server
 				outputChannel.writeObject(funcion);
 				log.info("["+numClient+"] ("+c+") Mensaje enviado> " + (new Gson()).toJson(funcion).toString());
-				//read 
+				//read
 				Message response = (Message) inputChannel.readObject();
 				log.info("["+numClient+"] ("+c+") El servidor ha respondido> "+response.getResultado());
 			}
@@ -63,4 +64,3 @@ public class ClientTCP implements Runnable {
 	}
 
 }
-
